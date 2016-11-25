@@ -1,12 +1,14 @@
 package burp;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -29,30 +31,37 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+import javax.xml.crypto.Data;
 
 import java.awt.GridLayout;
 
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.ActionEvent;
 
 
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Desktop;
 import java.io.PrintWriter;
-import burp.CAESOperator; //AES¼Ó½âÃÜËã·¨µÄÊµÏÖÀà
+import java.net.URI;
+import java.sql.Date;
+
 import burp.IParameter;
-import burp.CUnicodeDecoder;
+import custom.CMD5;
+import custom.CSHA1;
+
 
 
 public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContextMenuFactory
 {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
-    private PrintWriter stdout;//ÏÖÔÚÕâÀï¶¨Òå±äÁ¿£¬ÔÙÔÚregisterExtenderCallbacksº¯ÊıÖĞÊµÀı»¯£¬Èç¹û¶¼ÔÚº¯ÊıÖĞ¾ÍÖ»ÊÇ¾Ö²¿±äÁ¿£¬²»ÄÜÔÚÕâÊµÀı»¯£¬ÒòÎªÒªÓÃµ½ÆäËû²ÎÊı¡£
+    private PrintWriter stdout;//ç°åœ¨è¿™é‡Œå®šä¹‰å˜é‡ï¼Œå†åœ¨registerExtenderCallbackså‡½æ•°ä¸­å®ä¾‹åŒ–ï¼Œå¦‚æœéƒ½åœ¨å‡½æ•°ä¸­å°±åªæ˜¯å±€éƒ¨å˜é‡ï¼Œä¸èƒ½åœ¨è¿™å®ä¾‹åŒ–ï¼Œå› ä¸ºè¦ç”¨åˆ°å…¶ä»–å‚æ•°ã€‚
 	public JCheckBox chckbxProxy;
 	public JCheckBox chckbxScanner;
 	public JCheckBox chckbxIntruder;
@@ -65,11 +74,15 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	public JTextField textFieldConnector;
 	public JTextArea textAreaFinalString;
 	public JCheckBox chckbxMD5;
+	public JCheckBox chckbxSHA1;
 	public JCheckBox chckbxNewCheckBox_3;
 	public JTextArea textAreaSign;
 	public JPanel contentPane;
 	private final ButtonGroup buttonGroup = new ButtonGroup();
-	private JTextField textFieldBlackList;
+	private final ButtonGroup buttonGroup1 = new ButtonGroup();
+	public String extenderName = "Resign v2.0 by bit4";
+	private JTextField textFieldParaConnector;
+	public JLabel lblOrderMethod;
 	
 	
 	
@@ -79,20 +92,22 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	public String howDealKey = ""; //sameAsPara  or appendToEnd
 	String signPara = null; //the key name of sign parameter
 	private JTextField textFieldSign;
+	private JCheckBox chckbxOnlyUseValue;
+	
     
 	
     // implement IBurpExtender
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks)
-    {//µ±¼ÓÔØ²å¼şµÄÊ±ºò£¬»áµ÷ÓÃÏÂÃæµÄ·½·¨¡£
+    {//å½“åŠ è½½æ’ä»¶çš„æ—¶å€™ï¼Œä¼šè°ƒç”¨ä¸‹é¢çš„æ–¹æ³•ã€‚
     	stdout = new PrintWriter(callbacks.getStdout(), true);
-    	//PrintWriter stdout = new PrintWriter(callbacks.getStdout(), true); ÕâÖÖĞ´·¨ÊÇ¶¨Òå±äÁ¿ºÍÊµÀı»¯£¬ÕâÀïµÄ±äÁ¿¾ÍÊÇĞÂµÄ±äÁ¿¶ø²»ÊÇÖ®Ç°classÖĞµÄÈ«¾Ö±äÁ¿ÁË¡£
-    	stdout.println("ReSign v1.0 by bit4    https://github.com/bit4woo");
-    	//System.out.println("test"); ²»»áÊä³öµ½burpµÄ
+    	//PrintWriter stdout = new PrintWriter(callbacks.getStdout(), true); è¿™ç§å†™æ³•æ˜¯å®šä¹‰å˜é‡å’Œå®ä¾‹åŒ–ï¼Œè¿™é‡Œçš„å˜é‡å°±æ˜¯æ–°çš„å˜é‡è€Œä¸æ˜¯ä¹‹å‰classä¸­çš„å…¨å±€å˜é‡äº†ã€‚
+    	stdout.println(extenderName+"    https://github.com/bit4woo");
+    	//System.out.println("test"); ä¸ä¼šè¾“å‡ºåˆ°burpçš„
         this.callbacks = callbacks;
         helpers = callbacks.getHelpers();
-        callbacks.setExtensionName("ReSign v1.0 by bit4"); //²å¼şÃû³Æ
-        callbacks.registerHttpListener(this); //Èç¹ûÃ»ÓĞ×¢²á£¬ÏÂÃæµÄprocessHttpMessage·½·¨ÊÇ²»»áÉúĞ§µÄ¡£´¦ÀíÇëÇóºÍÏìÓ¦°üµÄ²å¼ş£¬Õâ¸öÓ¦¸ÃÊÇ±ØÒªµÄ
+        callbacks.setExtensionName(extenderName); //æ’ä»¶åç§°
+        callbacks.registerHttpListener(this); //å¦‚æœæ²¡æœ‰æ³¨å†Œï¼Œä¸‹é¢çš„processHttpMessageæ–¹æ³•æ˜¯ä¸ä¼šç”Ÿæ•ˆçš„ã€‚å¤„ç†è¯·æ±‚å’Œå“åº”åŒ…çš„æ’ä»¶ï¼Œè¿™ä¸ªåº”è¯¥æ˜¯å¿…è¦çš„
         callbacks.registerContextMenuFactory(this);
         addMenuTab();
     }
@@ -100,78 +115,33 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
     @Override
     public void processHttpMessage(int toolFlag,boolean messageIsRequest,IHttpRequestResponse messageInfo)
     {
-    	if (toolFlag == (toolFlag&checkEnabledFor())){ //²»Í¬µÄtoolflag´ú±íÁË²»Í¬µÄburp×é¼ş https://portswigger.net/burp/extender/api/constant-values.html#burp.IBurpExtenderCallbacks
-    		if (messageIsRequest){ //¶ÔÇëÇó°ü½øĞĞ´¦Àí
-    			
-    			//»ñÈ¡¸÷ÖÖ²ÎÊıºÍÏûÏ¢ÌåµÄ·½·¨ÂŞÁĞÈçÏÂ£¬ÎŞ·ÇÈıÖÖ£¬body£¬header£¬paramater
-    			IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo); //¶ÔÏûÏ¢Ìå½øĞĞ½âÎö 
-    			//the method of get header
-    			List<String> headers = analyzeRequest.getHeaders(); //»ñÈ¡httpÇëÇóÍ·µÄĞÅÏ¢£¬·µ»Ø¿ÉÒÔ¿´×÷ÊÇÒ»¸öpythonÖĞµÄÁĞ±í£¬javaÖĞÊÇ½Ğ·ºĞÍÊ²Ã´µÄ£¬»¹Ã»ÅªÇå³ş
-    			//the method of get body
-    			int bodyOffset = analyzeRequest.getBodyOffset();
-    			byte[] byte_Request = messageInfo.getRequest();
-    			String request = new String(byte_Request); //byte[] to String
-                String body = request.substring(bodyOffset);
-                byte[] byte_body = body.getBytes();  //String to byte[]
-    			//the method of get parameter
-                List<IParameter> paras = analyzeRequest.getParameters();
-                
-                
-                //¸ù¾İÍ¼ĞÎÃæ°å»ñÈ¡¸÷Ïî²ÎÊı
-                Map<String,String> paraList = getPara(analyzeRequest);//»ñÈ¡ĞèÒª²ÎÊısign¼ÆËãµÄ²ÎÊı¡£×Ô¶¨ÒåµÄgetParaÅÅ³ıÁËblacklistÖĞµÄ²ÎÊı
-                signPara = textFieldSign.getText();
+    	if (toolFlag == (toolFlag&checkEnabledFor())){ //ä¸åŒçš„toolflagä»£è¡¨äº†ä¸åŒçš„burpç»„ä»¶ https://portswigger.net/burp/extender/api/constant-values.html#burp.IBurpExtenderCallbacks
+    		if (messageIsRequest){ //å¯¹è¯·æ±‚åŒ…è¿›è¡Œå¤„ç†
+    			IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo); //å¯¹æ¶ˆæ¯ä½“è¿›è¡Œè§£æ 
                 byte getSignParaType = getSignParaType(analyzeRequest);
                 
-                
-                //ÅĞ¶ÏÒ»¸öÇëÇóÊÇ·ñÊÇÎÄ¼şÉÏ´«µÄÇëÇó¡£//Í¼ĞÎ½çÃæÃ»ÓĞÕâ²¿·Ö¹¦ÄÜ£¬ÔİÊ±ÆúÓÃ
-    			boolean isFileUploadRequest =false;
-//    			for (String header : headers){
-//    				//stdout.println(header);
-//    				if (header.toLowerCase().indexOf("content-type")!=-1 && header.toLowerCase().indexOf("boundary")!=-1){//Í¨¹ıhttpÍ·ÖĞµÄÄÚÈİÅĞ¶ÏÕâ¸öÇëÇóÊÇ·ñÊÇÎÄ¼şÉÏ´«µÄÇëÇó
-//    					isFileUploadRequest = true;
-//    				}
-//    			}
-    			//*******************recalculate sign**************************//
-    			if (isFileUploadRequest == false){ //¶ÔÄ³Ğ©ÇëÇó²»×ö´¦Àí£¬¿ÉÒÔÔÚÕâÀï¿ØÖÆ
-    				if (getHost(analyzeRequest).endsWith(getHostFromUI()) && signPara != null && secretKey !=null && getSignParaType !=-1){//¼ì²éÍ¼ĞÎÃæ°åÉÏµÄ¸÷ÖÖ²ÎÊı£¬¶¼Æë±¸ÁË²Å½øĞĞ¡£
-    	    			byte[] new_Request = messageInfo.getRequest();
-    	    			String str = combineString(paraList);
-    	    			CMD5 getMD5 = new CMD5();
-    					String newSign = getMD5.GetMD5Code(str);
-    		    		//stdout.println("New Sign:"+newSign); //Êä³öµ½extenderµÄUI´°¿Ú£¬¿ÉÒÔÈÃÊ¹ÓÃÕßÓĞÒ»Ğ©ÅĞ¶Ï
-        				//¸üĞÂ°üµÄ·½·¨¼¯ºÏ
-        				//¸üĞÂ²ÎÊı
-        				IParameter newPara = helpers.buildParameter(signPara, newSign, getSignParaType); //¹¹ÔìĞÂµÄ²ÎÊı,Èç¹û²ÎÊıÊÇPARAM_JSONÀàĞÍ£¬Õâ¸ö·½·¨ÊÇ²»ÊÊÓÃµÄ
-        				//IParameter newPara = helpers.buildParameter(key, aesvalue, PARAM_BODY); //ÒªÊ¹ÓÃÕâ¸öPARAM_BODY ÊÇ²»ÊÇĞèÒªÏÈÊµÀı»¯IParameterÀà¡£
-        				new_Request = helpers.updateParameter(new_Request, newPara); //¹¹ÔìĞÂµÄÇëÇó°ü£¬ÕâÀïÊÇ·½·¨Ò»updateParameter
-        				// new_Request = helpers.buildHttpMessage(headers, byte_body); //Èç¹ûĞŞ¸ÄÁËheader»òÕßÊıĞŞ¸ÄÁËbody£¬¶ø²»ÊÇÍ¨¹ıupdateParameter£¬Ê¹ÓÃÕâ¸ö·½·¨¡£
-        				
-//            				//µ±²ÎÊıÊÇÔÚjsonÊı¾İ¸ñÊ½ÖĞµÄÊ±ºò£¬ĞèÒªÓÃµ½ÈçÏÂ·½·¨£»
-//            				//Èç¹ûÔÚurlÖĞµÄ²ÎÊıµÄÖµÊÇ xxx=json¸ñÊ½µÄ×Ö·û´® ÕâÖÖĞÎÊ½µÄÊ±ºò£¬getParametersÓ¦¸ÃÊÇÎŞ·¨»ñÈ¡µ½×îµ×²ãµÄ¼üÖµ¶ÔµÄ¡£ÏëÒª¸üĞÂÆäÖĞµÄ²ÎÊıÒ²ĞèÒªÊ¹ÓÃÈçÏÂµÄ·½·¨¡£
-//        	    			JSONObject jsonObject = JSON.parseObject(body);
-//        	    			JSONObject header = jsonObject.getJSONObject("header");
-//        	    			header.replace("sign", sign);
-//        	    			jsonObject.replace("header", header);
-//        	    			body = JSON.toJSONString(jsonObject);
-        				
-    	    			messageInfo.setRequest(new_Request);//ÉèÖÃ×îÖÕĞÂµÄÇëÇó°ü
-    	    			stdout.println(new String(messageInfo.getRequest()));
-    	    			stdout.print("\r\n");
-    	    			/* to verify the updated result
-    	    			for (IParameter para : helpers.analyzeRequest(messageInfo).getParameters()){
-    	    				stdout.println(para.getValue());
-    	    			}
-    	    			*/
-
-    				}
-    			}
-
-
-    			
-    		}  		
-    	}
-    		
-    }
+                //*******************recalculate sign**************************//
+				if (getHost(analyzeRequest).equals(getHostFromUI()) && getSignParaType !=-1){//æ£€æŸ¥å›¾å½¢é¢æ¿ä¸Šçš„å„ç§å‚æ•°ï¼Œéƒ½é½å¤‡äº†æ‰è¿›è¡Œã€‚
+	    			byte[] new_Request = messageInfo.getRequest();
+	    			String str = combineString(getUpdatedParaBaseOnTable(analyzeRequest),getOnlyValueConfig(),getParaConnector());
+	    			stdout.println("Combined String:"+str);
+					String newSign = calcSign(str);
+		    		stdout.println("New Sign:"+newSign); //è¾“å‡ºåˆ°extenderçš„UIçª—å£ï¼Œå¯ä»¥è®©ä½¿ç”¨è€…æœ‰ä¸€äº›åˆ¤æ–­
+    				//æ›´æ–°å‚æ•°
+    				IParameter newPara = helpers.buildParameter(signPara, newSign, getSignParaType); //æ„é€ æ–°çš„å‚æ•°,å¦‚æœå‚æ•°æ˜¯PARAM_JSONç±»å‹ï¼Œè¿™ä¸ªæ–¹æ³•æ˜¯ä¸é€‚ç”¨çš„
+    				new_Request = helpers.updateParameter(new_Request, newPara); //æ„é€ æ–°çš„è¯·æ±‚åŒ…ï¼Œè¿™é‡Œæ˜¯æ–¹æ³•ä¸€updateParameter
+	    			messageInfo.setRequest(new_Request);//è®¾ç½®æœ€ç»ˆæ–°çš„è¯·æ±‚åŒ…
+	    			//stdout.println(new String(messageInfo.getRequest()));
+	    			//stdout.print("\r\n");
+	    			/* to verify the updated result
+	    			for (IParameter para : helpers.analyzeRequest(messageInfo).getParameters()){
+	    				stdout.println(para.getValue());
+	    			}
+	    			*/
+				}
+			}
+		}  		
+	}
 
     
 	public void CGUI() {
@@ -214,7 +184,31 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		contentPane.add(panel_1, BorderLayout.SOUTH);
 		panel_1.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 		
-		JLabel lblNewLabel = new JLabel("ReSign v1.0 by bit4    https://github.com/bit4woo");
+		JLabel lblNewLabel = new JLabel(extenderName+"    https://github.com/bit4woo");
+		lblNewLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+					URI uri = new URI("https://github.com/bit4woo");
+					Desktop desktop = Desktop.getDesktop();
+					if(Desktop.isDesktopSupported()&&desktop.isSupported(Desktop.Action.BROWSE)){
+						desktop.browse(uri);
+					}
+				} catch (Exception e2) {
+					// TODO: handle exception
+					BurpExtender.this.callbacks.printError(e2.getMessage());
+				}
+				
+			}
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				lblNewLabel.setForeground(Color.BLUE);
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				lblNewLabel.setForeground(Color.BLACK);
+			}
+		});
 		lblNewLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		panel_1.add(lblNewLabel);
 		
@@ -227,14 +221,14 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		panel.add(panel_5, BorderLayout.NORTH);
 		panel_5.setLayout(new GridLayout(0, 1, 0, 0));
 		
-		JLabel lblDomain = new JLabel("Domain:");
-		panel_5.add(lblDomain);
+		JLabel lblURL = new JLabel("Domain:");
+		panel_5.add(lblURL);
 		
 		textFieldDomain = new JTextField();
 		panel_5.add(textFieldDomain);
 		textFieldDomain.setColumns(20);
 		
-		JLabel lblParas = new JLabel("Parameters:(Click Table Header To Sort)");
+		JLabel lblParas = new JLabel("[1] Parameters:(Click Table Header To Sort Or Move Up And Down To Custom)");
 		panel_5.add(lblParas);
 		
 		JScrollPane panel_6 = new JScrollPane();
@@ -242,6 +236,24 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		panel.add(panel_6, BorderLayout.CENTER);
 		
 		table = new JTable();
+		table.getTableHeader().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+					sortedColumn = table.getRowSorter().getSortKeys().get(0).getColumn();
+					//System.out.println(sortedColumn);
+					sortedMethod = table.getRowSorter().getSortKeys().get(0).getSortOrder();
+					System.out.println(sortedMethod); //ASCENDING   DESCENDING
+				} catch (Exception e1) {
+					sortedColumn = -1;
+					sortedMethod = null;
+					BurpExtender.this.callbacks.printError(e1.getMessage());
+				}
+//				System.out.println(sortedColumn);
+//				System.out.println(sortedMethod);
+				lblOrderMethod.setText(table.getColumnName(sortedColumn)+" "+sortedMethod);
+			}
+		});
 		table.setColumnSelectionAllowed(true);
 		table.setCellSelectionEnabled(true);
 		table.setSurrendersFocusOnKeystroke(true);
@@ -263,71 +275,10 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		panel.add(panel_7, BorderLayout.EAST);
 		GridBagLayout gbl_panel_7 = new GridBagLayout();
 		gbl_panel_7.columnWidths = new int[]{93, 0};
-		gbl_panel_7.rowHeights = new int[]{23, 0, 0, 0, 0, 0, 0, 0};
+		gbl_panel_7.rowHeights = new int[]{23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		gbl_panel_7.columnWeights = new double[]{1.0, Double.MIN_VALUE};
-		gbl_panel_7.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_panel_7.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel_7.setLayout(gbl_panel_7);
-		
-		JButton btnNewButton = new JButton("Remove");
-		btnNewButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-				if (table.getSelectedRow() != -1){
-					tableModel.removeRow(table.getSelectedRow());//ÈçºÎÒ»´ÎÉ¾³ı¶àĞĞ£¿
-				}
-			}
-		});
-		GridBagConstraints gbc_btnNewButton = new GridBagConstraints();
-		gbc_btnNewButton.insets = new Insets(0, 0, 5, 0);
-		gbc_btnNewButton.gridx = 0;
-		gbc_btnNewButton.gridy = 0;
-		panel_7.add(btnNewButton, gbc_btnNewButton);
-		
-		JButton btnAdd = new JButton("Add");
-		btnAdd.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				DefaultTableModel model = (DefaultTableModel) table.getModel();
-				model.addRow(new Object[]{"k","v"});
-			}
-		});
-		GridBagConstraints gbc_btnAdd = new GridBagConstraints();
-		gbc_btnAdd.insets = new Insets(0, 0, 5, 0);
-		gbc_btnAdd.gridx = 0;
-		gbc_btnAdd.gridy = 1;
-		panel_7.add(btnAdd, gbc_btnAdd);
-		
-		JButton btnNewButton_1 = new JButton("Add To Black List");
-		btnNewButton_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String blackListString = textFieldBlackList.getText();
-				List<String> blackList = Arrays.asList(blackListString.split(" "));
-				if (table.getSelectedRow() != -1){
-					String x = table.getValueAt(table.getSelectedRow(), 0).toString();
-					if (!blackList.contains(x) & x != "" & x != null)
-						blackListString +=" "+x;
-				}
-				textFieldBlackList.setText(blackListString);
-			}
-		});
-		GridBagConstraints gbc_btnNewButton_1 = new GridBagConstraints();
-		gbc_btnNewButton_1.insets = new Insets(0, 0, 5, 0);
-		gbc_btnNewButton_1.gridx = 0;
-		gbc_btnNewButton_1.gridy = 2;
-		panel_7.add(btnNewButton_1, gbc_btnNewButton_1);
-		
-		
-		JButton button = new JButton("Show Final String");
-		button.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String str = combineString(getParaFromTable());
-				textAreaFinalString.setText(str);
-			}
-		});
-		GridBagConstraints gbc_button = new GridBagConstraints();
-		gbc_button.insets = new Insets(0, 0, 5, 0);
-		gbc_button.gridx = 0;
-		gbc_button.gridy = 4;
-		panel_7.add(button, gbc_button);
 		
 		
 		JButton btnMarkAsSign = new JButton("Mark As Sign Para");
@@ -336,20 +287,125 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 				if (table.getSelectedRow() != -1){
 					signPara = table.getValueAt(table.getSelectedRow(), 0).toString();
 					textFieldSign.setText(signPara);
-					
-					//add to blacklist
-					String blackListString = textFieldBlackList.getText();
-					List<String> blackList = Arrays.asList(blackListString.split(" "));
-					if (!blackList.contains(signPara) & signPara != "" & signPara != null)
-						blackListString +=" "+signPara;
-					textFieldBlackList.setText(blackListString);
 				}
 			}
 		});
+		
+		
+		JButton btnMoveDown = new JButton("Move Down");
+		btnMoveDown.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (table.getSelectedRow() != -1 && table.getSelectedRow()+1 <= table.getRowCount()-1){
+					try{
+						int row = table.getSelectedRow();
+						String xkey = table.getValueAt(row, 0).toString();
+						String xvalue = table.getValueAt(row, 1).toString();
+						
+						String tmpkey = table.getValueAt(row+1, 0).toString();
+						String tmpvalue = table.getValueAt(row+1, 1).toString();
+						
+						//do exchange 
+						tableModel.setValueAt(tmpkey, row, 0);
+						tableModel.setValueAt(tmpvalue, row, 1);
+						
+						tableModel.setValueAt(xkey, row+1, 0);
+						tableModel.setValueAt(xvalue, row+1, 1);
+						
+						table.setRowSelectionInterval(row+1, row+1);//set the line selected
+
+						lblOrderMethod.setText("Custom Order");
+					}catch(Exception e1){
+						BurpExtender.this.callbacks.printError(e1.getMessage());
+						
+					}
+					
+					
+				}
+			}
+		});
+		
+		JButton btnMoveUp = new JButton("Move Up");
+		btnMoveUp.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (table.getSelectedRow() != -1 && table.getSelectedRow()-1 >=0){
+					try {
+						int row = table.getSelectedRow();
+						String xkey = table.getValueAt(row, 0).toString();
+						String xvalue = table.getValueAt(row, 1).toString();
+						
+						String tmpkey = table.getValueAt(row-1, 0).toString();
+						String tmpvalue = table.getValueAt(row-1, 1).toString();
+						
+						//do exchange 
+						tableModel.setValueAt(tmpkey, row, 0);
+						tableModel.setValueAt(tmpvalue, row, 1);
+						
+						tableModel.setValueAt(xkey, row-1, 0);
+						tableModel.setValueAt(xvalue, row-1, 1);
+						
+						table.setRowSelectionInterval(row-1, row-1);
+						
+						lblOrderMethod.setText("Custom Order");
+					} catch (Exception e2) {
+						// TODO: handle exception
+						BurpExtender.this.callbacks.printError(e2.getMessage());
+					}
+
+				}
+			}
+		});
+		
+		JButton btnAdd = new JButton("Add");
+		btnAdd.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DefaultTableModel model = (DefaultTableModel) table.getModel();
+				model.addRow(new Object[]{"key","value"});
+				lblOrderMethod.setText("Custom Order");
+			}
+		});
+		
+		JButton btnNewButton = new JButton("Remove");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
+				if (table.getSelectedRow() != -1){
+					tableModel.removeRow(table.getSelectedRow());
+				}
+				lblOrderMethod.setText("Custom Order");
+			}
+		});
+		
+		
+		lblOrderMethod = new JLabel("Custom Order");
+		GridBagConstraints gbc_lblOrderMethod = new GridBagConstraints();
+		gbc_lblOrderMethod.insets = new Insets(0, 0, 5, 0);
+		gbc_lblOrderMethod.gridx = 0;
+		gbc_lblOrderMethod.gridy = 0;
+		panel_7.add(lblOrderMethod, gbc_lblOrderMethod);
+		GridBagConstraints gbc_btnNewButton = new GridBagConstraints();
+		gbc_btnNewButton.insets = new Insets(0, 0, 5, 0);
+		gbc_btnNewButton.gridx = 0;
+		gbc_btnNewButton.gridy = 1;
+		panel_7.add(btnNewButton, gbc_btnNewButton);
+		GridBagConstraints gbc_btnAdd = new GridBagConstraints();
+		gbc_btnAdd.insets = new Insets(0, 0, 5, 0);
+		gbc_btnAdd.gridx = 0;
+		gbc_btnAdd.gridy = 2;
+		panel_7.add(btnAdd, gbc_btnAdd);
+		GridBagConstraints gbc_btnMoveUp = new GridBagConstraints();
+		gbc_btnMoveUp.insets = new Insets(0, 0, 5, 0);
+		gbc_btnMoveUp.gridx = 0;
+		gbc_btnMoveUp.gridy = 3;
+		panel_7.add(btnMoveUp, gbc_btnMoveUp);
+		GridBagConstraints gbc_btnMoveDown = new GridBagConstraints();
+		gbc_btnMoveDown.insets = new Insets(0, 0, 5, 0);
+		gbc_btnMoveDown.gridx = 0;
+		gbc_btnMoveDown.gridy = 4;
+		panel_7.add(btnMoveDown, gbc_btnMoveDown);
 		GridBagConstraints gbc_btnMarkAsSign = new GridBagConstraints();
 		gbc_btnMarkAsSign.insets = new Insets(0, 0, 5, 0);
 		gbc_btnMarkAsSign.gridx = 0;
-		gbc_btnMarkAsSign.gridy = 3;
+		gbc_btnMarkAsSign.gridy = 6;
 		panel_7.add(btnMarkAsSign, gbc_btnMarkAsSign);
 		
 		textFieldSign = new JTextField();
@@ -361,6 +417,26 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		panel_7.add(textFieldSign, gbc_textFieldSign);
 		textFieldSign.setColumns(10);
 		
+		JButton button = new JButton("Show Final String");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//System.out.println(getOnlyValueConfig());
+				//System.out.println(getSignPara());
+				if (getSignPara().equals("")){
+					textAreaFinalString.setText("error! sign parameter must be specified!");
+				}else{
+					String str = combineString(getParaFromTable(),getOnlyValueConfig(),getParaConnector());
+					textAreaFinalString.setText(str);
+				}
+				
+			}
+		});
+		GridBagConstraints gbc_button = new GridBagConstraints();
+		gbc_button.insets = new Insets(0, 0, 5, 0);
+		gbc_button.gridx = 0;
+		gbc_button.gridy = 9;
+		panel_7.add(button, gbc_button);
+		
 		
 		
 		JPanel panel_8 = new JPanel();
@@ -368,7 +444,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		panel.add(panel_8, BorderLayout.SOUTH);
 		panel_8.setLayout(new GridLayout(0, 1, 0, 0));
 		
-		JLabel lblSecretKey = new JLabel("Secret Key :");
+		JLabel lblSecretKey = new JLabel("[2] Secret Key :");
 		panel_8.add(lblSecretKey);
 		
 		textFieldSecretKey = new JTextField();
@@ -377,22 +453,28 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		textFieldSecretKey.setColumns(50);
 		
 		
-		chckbxSameAsPara = new JCheckBox("Add secret key as a parameter, to sort with parameters");
+		chckbxSameAsPara = new JCheckBox("Add secret key as a parameter. eg. key=secretkey");
 		panel_8.add(chckbxSameAsPara);
 		chckbxSameAsPara.setSelected(true);
 		buttonGroup.add(chckbxSameAsPara);
 		
-		chckbxAppendToEnd = new JCheckBox("Append to the end of sorted Parameters(should contain connect string, such as & :)");
+		chckbxAppendToEnd = new JCheckBox("Append to the end of sorted Parameters. eg. &key=secretkey");
 		panel_8.add(chckbxAppendToEnd);
 		buttonGroup.add(chckbxAppendToEnd);
 		
-		JLabel lblNewLabel_1 = new JLabel("Para Black List : ");
+		JLabel lblNewLabel_1 = new JLabel("[3] How To Combine\uFF1A ");
 		panel_8.add(lblNewLabel_1);
 		
-		textFieldBlackList = new JTextField();
-		panel_8.add(textFieldBlackList);
-		textFieldBlackList.setColumns(50);
+		chckbxOnlyUseValue = new JCheckBox("Only Use Value");
+		panel_8.add(chckbxOnlyUseValue);
 		
+		JLabel lblConnecStringBetween = new JLabel("connection string between each parameter");
+		panel_8.add(lblConnecStringBetween);
+		
+		textFieldParaConnector = new JTextField();
+		textFieldParaConnector.setText("&");
+		panel_8.add(textFieldParaConnector);
+		textFieldParaConnector.setColumns(50);
 		
 		
 		JPanel panel_2 = new JPanel();
@@ -436,13 +518,24 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		gbc_chckbxMD5.gridx = 0;
 		gbc_chckbxMD5.gridy = 1;
 		panel_10.add(chckbxMD5, gbc_chckbxMD5);
+		buttonGroup1.add(chckbxMD5);
+		
+		chckbxSHA1 = new JCheckBox("SHA1");
+		chckbxSHA1.setSelected(true);
+		GridBagConstraints gbc_chckbxSHA1 = new GridBagConstraints();
+		gbc_chckbxSHA1.insets = new Insets(0, 0, 5, 5);
+		gbc_chckbxSHA1.gridx = 1;
+		gbc_chckbxSHA1.gridy = 1;
+		panel_10.add(chckbxSHA1, gbc_chckbxSHA1);
+		buttonGroup1.add(chckbxSHA1);
 		
 		chckbxNewCheckBox_3 = new JCheckBox("To be Continue");
+		chckbxNewCheckBox_3.setSelected(true);
 		chckbxNewCheckBox_3.setEnabled(false);
 		GridBagConstraints gbc_chckbxNewCheckBox_3 = new GridBagConstraints();
-		gbc_chckbxNewCheckBox_3.insets = new Insets(0, 0, 5, 5);
+		gbc_chckbxNewCheckBox_3.insets = new Insets(0, 0, 5, 0);
 		gbc_chckbxNewCheckBox_3.anchor = GridBagConstraints.NORTHWEST;
-		gbc_chckbxNewCheckBox_3.gridx = 1;
+		gbc_chckbxNewCheckBox_3.gridx = 2;
 		gbc_chckbxNewCheckBox_3.gridy = 1;
 		panel_10.add(chckbxNewCheckBox_3, gbc_chckbxNewCheckBox_3);
 		
@@ -452,9 +545,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		JButton btnSign = new JButton("Sign");
 		btnSign.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				CMD5 getMD5 = new CMD5();
-				String sign = getMD5.GetMD5Code(textAreaFinalString.getText());
-				textAreaSign.setText(sign);
+				textAreaSign.setText(calcSign(textAreaFinalString.getText()));
 			}
 		});
 		panel_11.add(btnSign);
@@ -463,13 +554,13 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	
     
     
-    //¸÷ÖÖ´ÓÍ¼ĞÎÃæ°å»òÕß´ÓÊı¾İ°ü»ñÈ¡²ÎÊı£¬»ñÈ¡ÅäÖÃµÄº¯Êı¡£--start
+    //å„ç§ä»å›¾å½¢é¢æ¿æˆ–è€…ä»æ•°æ®åŒ…è·å–å‚æ•°ï¼Œè·å–é…ç½®çš„å‡½æ•°ã€‚--start
     
 	public int checkEnabledFor(){
 		//get values that should enable this extender for which Component.
 		int status = 0;
 		if (chckbxIntruder.isSelected()){
-			status +=32;
+			status += 32;
 		}
 		if(chckbxProxy.isSelected()){
 			status += 4;
@@ -496,90 +587,50 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		}
 	}
 	
-	public void getSortConfig() {
-		try {
-			sortedColumn = table.getRowSorter().getSortKeys().get(0).getColumn();
-			//System.out.println(sortedColumn);
-			sortedMethod = table.getRowSorter().getSortKeys().get(0).getSortOrder();
-			//System.out.println(sortedMethod); //ASCENDING   DESCENDING
-		} catch (Exception e) {
-			sortedColumn = -1; //Ã»ÓĞµã»÷±íÍ·½øĞĞÅÅĞò¡£
-			sortedMethod = null;
+	public boolean getOnlyValueConfig() {
+		if(chckbxOnlyUseValue.isSelected()){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	public String getParaConnector() {
+		return textFieldParaConnector.getText();
+	}
+	
+	public String getSignPara(){
+		return textFieldSign.getText();
+	}
+	
+	public String getSignAlgorithm() {
+		if (chckbxMD5.isSelected()){
+			return "MD5";
+		}else if (chckbxSHA1.isSelected()) {
+			return "SHA1";
+		}else {
+			return "null";
 		}
 	}
 	
 	
-	public Map<String, String> getPara(IRequestInfo analyzeRequest){
-    	List<IParameter> paras = analyzeRequest.getParameters();//µ±bodyÊÇjson¸ñÊ½µÄÊ±ºò£¬Õâ¸ö·½·¨Ò²¿ÉÒÔÕı³£»ñÈ¡µ½¼üÖµ¶Ô£¬Å£êş¡£µ«ÊÇPARAM_JSONµÈ¸ñÊ½²»ÄÜÍ¨¹ıupdateParameter·½·¨À´¸üĞÂ¡£
-    	Map<String,String> paraMap = new HashMap<String,String>();
-    	for (IParameter para:paras){
-    		if (!getBlackList().contains(para.getName())){
-    			paraMap.put(para.getName(), para.getValue());
-    		}
-    	}
-    	return paraMap ;
+	
+	//ä¸¤ä¸ªæ ¸å¿ƒæ–¹æ³•ï¼š1æ˜¯æ‹¼æ¥å­—ç¬¦ä¸²ï¼Œ2æ˜¯è®¡ç®—å‡ºsign
+	public String calcSign(String str){
+		String sign = "Sign Error";
+		//System.out.print(getSignAlgorithm());
+		if (getSignAlgorithm().equals("MD5")){
+			sign = CMD5.GetMD5Code(str);
+		}else if (getSignAlgorithm().equals("SHA1")) {
+			sign = CSHA1.SHA1(str);
+		}
+		return sign;
 	}
+
 	
-	public byte getSignParaType(IRequestInfo analyzeRequest){
-		List<IParameter> paras = analyzeRequest.getParameters();//µ±bodyÊÇjson¸ñÊ½µÄÊ±ºò£¬Õâ¸ö·½·¨Ò²¿ÉÒÔÕı³£»ñÈ¡µ½¼üÖµ¶Ô£¬Å£êş¡£µ«ÊÇPARAM_JSONµÈ¸ñÊ½²»ÄÜÍ¨¹ıupdateParameter·½·¨À´¸üĞÂ¡£
-		byte signParaType = -1;
-		for (IParameter para:paras){
-    		if (para.getName().equals(signPara)){
-    			signParaType = para.getType();
-    			
-    		}
-    	}
-		return signParaType;
-	}
-	
-	public Map<String, String> getParaFromTable(){
-    	Map<String, String> tableParas = new HashMap<String, String>();
-    	for (int i=0; i<table.getRowCount();i++){
-    		//System.out.println(table.getRowCount());
-    		String key = table.getValueAt(i, 0).toString();
-    		//System.out.println(key);
-    		String value = table.getValueAt(i, 1).toString();
-    		//System.out.println(value);
-    		if (!getBlackList().contains(key)){
-    			tableParas.put(key, value);
-    		}
-    	}
-    	System.out.println(tableParas);
-    	return tableParas;
-	}
-	
-	
-	public String getHost(IRequestInfo analyzeRequest){
-    	List<String> headers = analyzeRequest.getHeaders();
-    	String domain = "";
-    	for(String item:headers){
-    		if (item.toLowerCase().contains("host")){
-    			domain = new String(item.substring(6));
-    		}
-    	}
-    	return domain ;
-	}
-	
-	public List<String> getBlackList() {
-		return Arrays.asList(textFieldBlackList.getText().split(" "));
-	}
-	
-	
-	public String getHostFromUI(){
-    	String domain = "";
-    	domain = textFieldDomain.getText();
-    	return domain ;
-	}
-	//¸÷ÖÖ´ÓÍ¼ĞÎÃæ°å»òÕß´ÓÊı¾İ°ü»ñÈ¡²ÎÊı£¬»ñÈ¡ÅäÖÃµÄº¯Êı¡£--end
-	
-	
-	
-	
-	
-	//×éºÏ³ÉsignÇ°µÄ×Ö·û´®¡£
-	public String combineString(Map<String, String> paraMap) {
+	//ä¸¤ä¸ªæ ¸å¿ƒæ–¹æ³•ï¼š1æ˜¯æ‹¼æ¥å­—ç¬¦ä¸²ï¼Œ2æ˜¯è®¡ç®—å‡ºsign
+	public String combineString(Map<String, String> paraMap, boolean onlyValue, String paraConnector) {
 		getSecKeyConfig();
-		getSortConfig();
+		
 		String finalString = "";
 		
 		
@@ -590,25 +641,30 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 			}
 		}
 		
-		if (sortedColumn == -1){//Î´½øĞĞÅÅĞò¡£
+		
+		if (lblOrderMethod.getText().equals("Custom Order")){//sortedColumn == -1 || 
 			for(Map.Entry<String,String>para:paraMap.entrySet()){
 				if (!finalString.equals("")){
-					finalString += "&";
+					finalString += paraConnector;
 				}
-				finalString += para.getKey()+"="+para.getValue();
+				if (onlyValue){
+					finalString += para.getValue();
+				}else {
+					finalString += para;
+				}
 			}
 		}else if(sortedColumn == 0) {
 			if (sortedMethod.toString() == "ASCENDING"){
-				finalString = burp.CMapSort.combineMapEntry(burp.CMapSort.sortMapByKey(paraMap,"ASCENDING"), "&");
+				finalString = custom.CMapSort.combineMapEntry(custom.CMapSort.sortMapByKey(paraMap,"ASCENDING"), onlyValue, paraConnector);
 			}else if (sortedMethod.toString() == "DESCENDING") {
-				finalString = burp.CMapSort.combineMapEntry(burp.CMapSort.sortMapByKey(paraMap,"DESCENDING"), "&");
+				finalString = custom.CMapSort.combineMapEntry(custom.CMapSort.sortMapByKey(paraMap,"DESCENDING"), onlyValue, paraConnector);
 			}
 		}
 		else if (sortedColumn == 1) {
 			if (sortedMethod.toString() == "ASCENDING"){
-				finalString = burp.CMapSort.combineMapEntry(burp.CMapSort.sortMapByValue(paraMap,"ASCENDING"), "&");
+				finalString = custom.CMapSort.combineMapEntry(custom.CMapSort.sortMapByValue(paraMap,"ASCENDING"), onlyValue, paraConnector);
 			}else if (sortedMethod.toString() == "DESCENDING") {
-				finalString = burp.CMapSort.combineMapEntry(burp.CMapSort.sortMapByValue(paraMap,"DESCENDING"), "&");
+				finalString = custom.CMapSort.combineMapEntry(custom.CMapSort.sortMapByValue(paraMap,"DESCENDING"), onlyValue, paraConnector);
 			}
 		}
 		
@@ -621,10 +677,82 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	}
 	
 	
+	//æ ¹æ®GUIä¸­çš„æœ‰åºå‚æ•°åˆ—è¡¨ï¼Œæ›´æ–°å½“å‰è¯·æ±‚çš„å‚æ•°åˆ—è¡¨ã€‚
+	public Map<String, String> getUpdatedParaBaseOnTable(IRequestInfo analyzeRequest){
+    	List<IParameter> paras = analyzeRequest.getParameters();//å½“bodyæ˜¯jsonæ ¼å¼çš„æ—¶å€™ï¼Œè¿™ä¸ªæ–¹æ³•ä¹Ÿå¯ä»¥æ­£å¸¸è·å–åˆ°é”®å€¼å¯¹ï¼Œç‰›æ°ã€‚ä½†æ˜¯PARAM_JSONç­‰æ ¼å¼ä¸èƒ½é€šè¿‡updateParameteræ–¹æ³•æ¥æ›´æ–°ã€‚
+    	Map<String,String> paraMap = getParaFromTable();
+    	for (IParameter para:paras){
+    		if (paraMap.keySet().contains(para.getName())){
+    			if (paraMap.get(para.getName()).equals("<timestamp>")){
+    				paraMap.put(para.getName(),Long.toString(System.currentTimeMillis()));
+    			}else {
+    				paraMap.put(para.getName(), para.getValue());
+				}
+        		
+    		}
+    	}
+    	return paraMap ;
+	}
+	
+	public Map<String, String> getPara(IRequestInfo analyzeRequest){
+    	List<IParameter> paras = analyzeRequest.getParameters();//å½“bodyæ˜¯jsonæ ¼å¼çš„æ—¶å€™ï¼Œè¿™ä¸ªæ–¹æ³•ä¹Ÿå¯ä»¥æ­£å¸¸è·å–åˆ°é”®å€¼å¯¹ï¼Œç‰›æ°ã€‚ä½†æ˜¯PARAM_JSONç­‰æ ¼å¼ä¸èƒ½é€šè¿‡updateParameteræ–¹æ³•æ¥æ›´æ–°ã€‚
+    	Map<String,String> paraMap = new HashMap<String,String>();
+    	for (IParameter para:paras){
+    		paraMap.put(para.getName(), para.getValue());
+    	}
+    	return paraMap ;
+	}
+	
+	public byte getSignParaType(IRequestInfo analyzeRequest){
+		List<IParameter> paras = analyzeRequest.getParameters();//å½“bodyæ˜¯jsonæ ¼å¼çš„æ—¶å€™ï¼Œè¿™ä¸ªæ–¹æ³•ä¹Ÿå¯ä»¥æ­£å¸¸è·å–åˆ°é”®å€¼å¯¹ï¼Œç‰›æ°ã€‚ä½†æ˜¯PARAM_JSONç­‰æ ¼å¼ä¸èƒ½é€šè¿‡updateParameteræ–¹æ³•æ¥æ›´æ–°ã€‚
+		byte signParaType = -1;
+		for (IParameter para:paras){
+    		if (para.getName().equals(signPara)){
+    			signParaType = para.getType();
+    			
+    		}
+    	}
+		return signParaType;
+	}
+	
+	public Map<String, String> getParaFromTable(){
+		Map<String, String> tableParas = new LinkedHashMap<String, String>();
+    	for (int i=0; i<table.getRowCount();i++){
+    		//System.out.println(table.getRowCount());
+    		String key = table.getValueAt(i, 0).toString();
+    		//System.out.println(key);
+    		String value = table.getValueAt(i, 1).toString();
+    		//System.out.println(value);
+
+    		if (!key.equals(getSignPara())){
+    			tableParas.put(key, value);
+    		}
+    	}
+    	System.out.println(tableParas);
+    	return tableParas;
+	}
+	
+	public String getHost(IRequestInfo analyzeRequest){
+    	List<String> headers = analyzeRequest.getHeaders();
+    	String domain = "";
+    	for(String item:headers){
+    		if (item.toLowerCase().contains("host")){
+    			domain = new String(item.substring(6));
+    		}
+    	}
+    	return domain ;
+	}
+	
+	public String getHostFromUI(){
+    	String domain = "";
+    	domain = textFieldDomain.getText();
+    	return domain ;
+	}
+	//å„ç§ä»å›¾å½¢é¢æ¿æˆ–è€…ä»æ•°æ®åŒ…è·å–å‚æ•°ï¼Œè·å–é…ç½®çš„å‡½æ•°ã€‚--end
+
 	
 	
-	
-	//ÒÔÏÂÊÇ¸÷ÖÖburp±ØĞëµÄ·½·¨ --start
+	//ä»¥ä¸‹æ˜¯å„ç§burpå¿…é¡»çš„æ–¹æ³• --start
     
     public void addMenuTab()
     {
@@ -633,15 +761,15 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
         public void run()
         {
           BurpExtender.this.CGUI();
-          BurpExtender.this.callbacks.addSuiteTab(BurpExtender.this); //ÕâÀïµÄBurpExtender.thisÊµÖÊÊÇÖ¸ITab¶ÔÏó£¬Ò²¾ÍÊÇgetUiComponent()ÖĞµÄcontentPane.Õâ¸ö²ÎÊıÓÉCGUI()º¯Êı³õÊ¼»¯¡£
-          //Èç¹ûÕâÀï±¨java.lang.NullPointerException: Component cannot be null ´íÎó£¬ĞèÒªÅÅ²écontentPaneµÄ³õÊ¼»¯ÊÇ·ñÕıÈ·¡£
+          BurpExtender.this.callbacks.addSuiteTab(BurpExtender.this); //è¿™é‡Œçš„BurpExtender.thiså®è´¨æ˜¯æŒ‡ITabå¯¹è±¡ï¼Œä¹Ÿå°±æ˜¯getUiComponent()ä¸­çš„contentPane.è¿™ä¸ªå‚æ•°ç”±CGUI()å‡½æ•°åˆå§‹åŒ–ã€‚
+          //å¦‚æœè¿™é‡ŒæŠ¥java.lang.NullPointerException: Component cannot be null é”™è¯¯ï¼Œéœ€è¦æ’æŸ¥contentPaneçš„åˆå§‹åŒ–æ˜¯å¦æ­£ç¡®ã€‚
         }
       });
     }
     
     
     
-    //ITab±ØĞëÊµÏÖµÄÁ½¸ö·½·¨
+    //ITabå¿…é¡»å®ç°çš„ä¸¤ä¸ªæ–¹æ³•
 	@Override
 	public String getTabCaption() {
 		// TODO Auto-generated method stub
@@ -652,14 +780,14 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		// TODO Auto-generated method stub
 		return this.contentPane;
 	}
-	//ITab±ØĞëÊµÏÖµÄÁ½¸ö·½·¨
+	//ITabå¿…é¡»å®ç°çš„ä¸¤ä¸ªæ–¹æ³•
 	
 	
 	
-	//IContextMenuFactory ±ØĞëÊµÏÖµÄ·½·¨
+	//IContextMenuFactory å¿…é¡»å®ç°çš„æ–¹æ³•
 	@Override
 	public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation)
-	{ //ĞèÒªÔÚÇ©Ãû×¢²á£¡£¡callbacks.registerContextMenuFactory(this);
+	{ //éœ€è¦åœ¨ç­¾åæ³¨å†Œï¼ï¼callbacks.registerContextMenuFactory(this);
 	    IHttpRequestResponse[] messages = invocation.getSelectedMessages();
 	    List<JMenuItem> list = new ArrayList<JMenuItem>();
 	    if((messages != null) && (messages.length > 0))
@@ -680,9 +808,11 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	            	textFieldDomain.setText(getHost(analyzeRequest));
 	            	
 	            	DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-	            	tableModel.setRowCount(0);//ÎªÁËÇå¿ÕÖ®Ç°µÄÊı¾İ
+	            	tableModel.setRowCount(0);//ä¸ºäº†æ¸…ç©ºä¹‹å‰çš„æ•°æ®
 	            	
 	            	Map<String,String> paraMap = getPara(analyzeRequest);
+	            	//stdout.println(paraMap);
+	            	//stdout.print(paraMap.keySet());
 	            	for(String key:paraMap.keySet()){
 	            		tableModel.addRow(new Object[]{key,paraMap.get(key)});
 	            	}
@@ -697,6 +827,6 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	    }
 	    return list;
 	}
-	//¸÷ÖÖburp±ØĞëµÄ·½·¨ --end
+	//å„ç§burpå¿…é¡»çš„æ–¹æ³• --end
 	
 }

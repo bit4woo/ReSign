@@ -1,4 +1,4 @@
-package burp;
+package custom;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

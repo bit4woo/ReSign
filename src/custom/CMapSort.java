@@ -1,4 +1,4 @@
-package burp;
+package custom;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -51,13 +51,22 @@ public class CMapSort {
 	}
 	
 	
-	public static String combineMapEntry(Map<String,String> map, String connector){
+	public static String combineMapEntry(Map<String,String> map, Boolean onlyValue, String connector){
 		String result = "";
-		for (Map.Entry<String, String> entry : map.entrySet()){
-			if (!result.equals("")){
-				result += connector;
+		if (onlyValue) {
+			for (Map.Entry<String, String> entry : map.entrySet()){
+				if (!result.equals("")){
+					result += connector;
+				}
+				result += entry.getValue();
 			}
-			result += entry;
+		}else {
+			for (Map.Entry<String, String> entry : map.entrySet()){
+				if (!result.equals("")){
+					result += connector;
+				}
+				result += entry;
+			}
 		}
 		return result;
 	}
@@ -90,7 +99,7 @@ public class CMapSort {
 			//System.out.println(entry.getKey() + " " + entry.getValue());
 			System.out.println(entry);
 		}
-		System.out.println(combineMapEntry(resultMap1, "&"));
+		System.out.println(combineMapEntry(resultMap1, false,"&"));
 	}
 }
 
