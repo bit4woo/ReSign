@@ -336,9 +336,15 @@ public class CGUI extends JFrame {
 		JButton btnNewButton = new JButton("Remove");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				int[] rowindexs = table.getSelectedRows();
+				for (int i=0; i < rowindexs.length; i++){
+					rowindexs[i] = table.convertRowIndexToModel(rowindexs[i]);//转换为Model的索引，否则排序后索引不对应。
+				}
+				Arrays.sort(rowindexs);
+				
 				DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-				if (table.getSelectedRow() != -1){
-					tableModel.removeRow(table.getSelectedRow());//如何一次删除多行？
+				for(int i=rowindexs.length-1;i>=0;i--){
+					tableModel.removeRow(rowindexs[i]);
 				}
 				lblOrderMethod.setText("Custom Order");
 			}

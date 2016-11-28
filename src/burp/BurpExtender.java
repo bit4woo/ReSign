@@ -1,6 +1,7 @@
 package burp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,6 +50,7 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.sql.Date;
 
 import burp.IParameter;
@@ -367,9 +369,15 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		JButton btnNewButton = new JButton("Remove");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				int[] rowindexs = table.getSelectedRows();
+				for (int i=0; i < rowindexs.length; i++){
+					rowindexs[i] = table.convertRowIndexToModel(rowindexs[i]);//转换为Model的索引，否则排序后索引不对应。
+				}
+				Arrays.sort(rowindexs);
+				
 				DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-				if (table.getSelectedRow() != -1){
-					tableModel.removeRow(table.getSelectedRow());
+				for(int i=rowindexs.length-1;i>=0;i--){
+					tableModel.removeRow(rowindexs[i]);
 				}
 				lblOrderMethod.setText("Custom Order");
 			}
@@ -687,6 +695,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
     				paraMap.put(para.getName(),Long.toString(System.currentTimeMillis()));
     			}else {
     				paraMap.put(para.getName(), para.getValue());
+    				//stdout.println(para.getName()+":"+para.getValue());
 				}
         		
     		}
@@ -814,7 +823,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	            	//stdout.println(paraMap);
 	            	//stdout.print(paraMap.keySet());
 	            	for(String key:paraMap.keySet()){
-	            		tableModel.addRow(new Object[]{key,paraMap.get(key)});
+	            		tableModel.addRow(new Object[]{URLDecoder.decode(key),URLDecoder.decode(paraMap.get(key))});
 	            	}
 	            }
 	            catch (Exception e1)

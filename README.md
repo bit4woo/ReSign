@@ -54,7 +54,7 @@ finally, chose how to combine parameters.
 
 
 
-## Change log ##
+## ReSign v2.0 Change log ##
 
 
 - support SHA1.
@@ -66,6 +66,17 @@ finally, chose how to combine parameters.
 - 增加自定义排序支持。
 - 增加字符拼接控制：是否只使用value,指定拼接连接符。
 - 调整插件生效范围策略：主要针对单个请求(就像burp的原生组件一样)，也就是说对于每个单独的请求都需从新配置。但是如果同域下其他接口的签名参数和方法完全一样，则可以不用重新配置。
+
+
+## ReSign v2.1 Change log ##
+
+- fix remove issue after sort.
+- support remove multiple rows.
+- fix URL encode issue in "Send to ReSign" menu.
+
+- 修复排序后删除异常的问题。
+- 增加支持多行删除。
+- 修复“发送到 Resign”中的URL编码问题。
 
 ## issue and contribute ##
 
