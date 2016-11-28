@@ -82,7 +82,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	public JPanel contentPane;
 	private final ButtonGroup buttonGroup = new ButtonGroup();
 	private final ButtonGroup buttonGroup1 = new ButtonGroup();
-	public String extenderName = "Resign v2.0 by bit4";
+	public String extenderName = "Resign v2.1 by bit4";
 	private JTextField textFieldParaConnector;
 	public JLabel lblOrderMethod;
 	
