@@ -53,6 +53,10 @@ finally, chose how to combine parameters.
 **重要提示：如果对选项理解不清晰，你可以随时点击“show final string”看看拼接的效果。**
 
 
+5.Use timestamp in parameter
+
+![](http://i.imgur.com/r0NDPv1.jpg)
+
 
 ## ReSign v2.0 Change log ##
 
