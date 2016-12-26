@@ -78,6 +78,17 @@ finally, chose how to combine parameters.
 - 增加支持多行删除。
 - 修复“发送到 Resign”中的URL编码问题。
 
+
+## ReSign v2.2 Change log ##
+
+- Support timestamp in parameter value ,basing on current system time.
+- Optimized log format.
+
+
+- 支持时间戳形式的参数值，通过获取当前系统时间实现。
+- 优化了log输出格式。
+
+
 ## issue and contribute ##
 
 any issue and contribute are welcomed。

@@ -22,6 +22,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.PageAttributes.OriginType;
 
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -82,7 +83,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	public JPanel contentPane;
 	private final ButtonGroup buttonGroup = new ButtonGroup();
 	private final ButtonGroup buttonGroup1 = new ButtonGroup();
-	public String extenderName = "Resign v2.1 by bit4";
+	public String extenderName = "Resign v2.2 by bit4";
 	private JTextField textFieldParaConnector;
 	public JLabel lblOrderMethod;
 	
@@ -104,7 +105,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
     {//当加载插件的时候，会调用下面的方法。
     	stdout = new PrintWriter(callbacks.getStdout(), true);
     	//PrintWriter stdout = new PrintWriter(callbacks.getStdout(), true); 这种写法是定义变量和实例化，这里的变量就是新的变量而不是之前class中的全局变量了。
-    	stdout.println(extenderName+"    https://github.com/bit4woo");
+    	stdout.println(extenderName+"    https://github.com/bit4woo\r\n");
     	//System.out.println("test"); 不会输出到burp的
         this.callbacks = callbacks;
         helpers = callbacks.getHelpers();
@@ -119,6 +120,9 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
     {
     	if (toolFlag == (toolFlag&checkEnabledFor())){ //不同的toolflag代表了不同的burp组件 https://portswigger.net/burp/extender/api/constant-values.html#burp.IBurpExtenderCallbacks
     		if (messageIsRequest){ //对请求包进行处理
+    			stdout.println("Origin Request:");
+    			stdout.println(new String(messageInfo.getRequest()));
+    			stdout.println("\r\n");
     			IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo); //对消息体进行解析 
                 byte getSignParaType = getSignParaType(analyzeRequest);
                 
@@ -126,20 +130,21 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 				if (getHost(analyzeRequest).equals(getHostFromUI()) && getSignParaType !=-1){//检查图形面板上的各种参数，都齐备了才进行。
 	    			byte[] new_Request = messageInfo.getRequest();
 	    			String str = combineString(getUpdatedParaBaseOnTable(analyzeRequest),getOnlyValueConfig(),getParaConnector());
-	    			stdout.println("Combined String:"+str);
+	    			//stdout.println("Combined String:"+str);
 					String newSign = calcSign(str);
-		    		stdout.println("New Sign:"+newSign); //输出到extender的UI窗口，可以让使用者有一些判断
+		    		//stdout.println("New Sign:"+newSign); //输出到extender的UI窗口，可以让使用者有一些判断
     				//更新参数
     				IParameter newPara = helpers.buildParameter(signPara, newSign, getSignParaType); //构造新的参数,如果参数是PARAM_JSON类型，这个方法是不适用的
     				new_Request = helpers.updateParameter(new_Request, newPara); //构造新的请求包，这里是方法一updateParameter
 	    			messageInfo.setRequest(new_Request);//设置最终新的请求包
-	    			//stdout.println(new String(messageInfo.getRequest()));
-	    			//stdout.print("\r\n");
-	    			/* to verify the updated result
-	    			for (IParameter para : helpers.analyzeRequest(messageInfo).getParameters()){
-	    				stdout.println(para.getValue());
-	    			}
-	    			*/
+	    			stdout.println("Changed Request:");
+	    			stdout.println(new String(messageInfo.getRequest()));
+	    			stdout.print("\r\n");
+	    			//to verify the updated result
+//	    			for (IParameter para : helpers.analyzeRequest(messageInfo).getParameters()){
+//	    				stdout.println(para.getValue());
+//	    			}
+	    		
 				}
 			}
 		}  		
@@ -434,9 +439,11 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 					textAreaFinalString.setText("error! sign parameter must be specified!");
 				}else{
 					String str = combineString(getParaFromTable(),getOnlyValueConfig(),getParaConnector());
+					if (str.contains("<timestamp>")){
+						str = str.replace("<timestamp>", Long.toString(System.currentTimeMillis()));//需要重新赋值，否则不会被更新
+					}
 					textAreaFinalString.setText(str);
 				}
-				
 			}
 		});
 		GridBagConstraints gbc_button = new GridBagConstraints();
@@ -691,8 +698,8 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
     	Map<String,String> paraMap = getParaFromTable();
     	for (IParameter para:paras){
     		if (paraMap.keySet().contains(para.getName())){
-    			if (paraMap.get(para.getName()).equals("<timestamp>")){
-    				paraMap.put(para.getName(),Long.toString(System.currentTimeMillis()));
+    			if (paraMap.get(para.getName()).contains("<timestamp>")){
+    				paraMap.put(para.getName(), paraMap.get(para.getName()).replace("<timestamp>", Long.toString(System.currentTimeMillis())));
     			}else {
     				paraMap.put(para.getName(), para.getValue());
     				//stdout.println(para.getName()+":"+para.getValue());
