@@ -22,8 +22,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.PageAttributes.OriginType;
-
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.JTextField;
@@ -33,8 +31,6 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.xml.crypto.Data;
-
 import java.awt.GridLayout;
 
 import javax.swing.ButtonGroup;
@@ -52,8 +48,6 @@ import java.awt.Desktop;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.sql.Date;
-
 import burp.IParameter;
 import custom.CMD5;
 import custom.CSHA1;
@@ -83,7 +77,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	public JPanel contentPane;
 	private final ButtonGroup buttonGroup = new ButtonGroup();
 	private final ButtonGroup buttonGroup1 = new ButtonGroup();
-	public String extenderName = "Resign v2.2 by bit4";
+	public String extenderName = "Resign v2.3 by bit4";
 	private JTextField textFieldParaConnector;
 	public JLabel lblOrderMethod;
 	
@@ -134,9 +128,29 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 					String newSign = calcSign(str);
 		    		//stdout.println("New Sign:"+newSign); //输出到extender的UI窗口，可以让使用者有一些判断
     				//更新参数
-    				IParameter newPara = helpers.buildParameter(signPara, newSign, getSignParaType); //构造新的参数,如果参数是PARAM_JSON类型，这个方法是不适用的
-    				new_Request = helpers.updateParameter(new_Request, newPara); //构造新的请求包，这里是方法一updateParameter
-	    			messageInfo.setRequest(new_Request);//设置最终新的请求包
+					//newSign = newSign.toUpperCase();
+					
+					if(getSignParaType == IParameter.PARAM_JSON) {
+						int bodyOffset = analyzeRequest.getBodyOffset();
+						List<String> headers = analyzeRequest.getHeaders();
+
+						byte[] byte_Request = messageInfo.getRequest();//当需要byte[]和string格式的请求包时用这个方法！
+						String request = new String(byte_Request); //byte[] to String
+
+						String body = request.substring(bodyOffset);
+						String oldchar = getSignParaValue(analyzeRequest);
+						callbacks.printOutput(oldchar);
+						String newBody = body.replace(getSignParaValue(analyzeRequest), newSign);
+						
+						byte[] bodyByte = newBody.getBytes();
+						new_Request = helpers.buildHttpMessage(headers, bodyByte); //关键方法
+						messageInfo.setRequest(new_Request);//设置最终新的请求包
+					}else {
+	    				IParameter newPara = helpers.buildParameter(signPara, newSign, getSignParaType); //构造新的参数,如果参数是PARAM_JSON类型，这个方法是不适用的
+	    				new_Request = helpers.updateParameter(new_Request, newPara); //构造新的请求包，这里是方法一updateParameter
+		    			messageInfo.setRequest(new_Request);//设置最终新的请求包
+					}
+
 	    			stdout.println("Changed Request:");
 	    			stdout.println(new String(messageInfo.getRequest()));
 	    			stdout.print("\r\n");
@@ -725,6 +739,18 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 		for (IParameter para:paras){
     		if (para.getName().equals(signPara)){
     			signParaType = para.getType();
+    			
+    		}
+    	}
+		return signParaType;
+	}
+	
+	public String getSignParaValue(IRequestInfo analyzeRequest){
+		List<IParameter> paras = analyzeRequest.getParameters();//当body是json格式的时候，这个方法也可以正常获取到键值对，牛掰。但是PARAM_JSON等格式不能通过updateParameter方法来更新。
+		String signParaType = null;
+		for (IParameter para:paras){
+    		if (para.getName().equals(signPara)){
+    			signParaType = para.getValue();
     			
     		}
     	}
