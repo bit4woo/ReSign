@@ -50,3 +50,6 @@ Temporary Items
 .fatjar
 *.class
 bin/
+.classpath
+.project
+/.settings/
