@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +41,7 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import burp.IParameter;
-import burp.IRequestInfo;
+import burp.Parameter;
 
 public class CGUI extends JFrame {
 	public JCheckBox chckbxProxy;
@@ -60,8 +61,8 @@ public class CGUI extends JFrame {
 	public JLabel lblconnector;
 	public String extenderName = "Resign v2.0 by bit4";
 
-	
-	
+
+
 	public String secretKey;
 	public int sortedColumn = -1;
 	public SortOrder sortedMethod;
@@ -69,11 +70,10 @@ public class CGUI extends JFrame {
 	private final ButtonGroup buttonGroup1 = new ButtonGroup();
 	public String howDealKey = ""; //sameAsPara  or appendToEnd
 	private JTextField textFieldParaConnector;
-	public String signPara; //the key name of sign parameter
-	private JTextField textFieldSign;
+	public JTextField textFieldSign;
 	private JCheckBox chckbxOnlyUseValue;
 	private JLabel lblOrderMethod;
-	
+
 	RowSorter<TableModel> sorter;
 	private JCheckBox chckbxSHA1;
 
@@ -97,47 +97,47 @@ public class CGUI extends JFrame {
 	 * Create the frame.
 	 */
 	public CGUI() {
-		
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 939, 694);
 		JPanel contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
-		
+
 		JPanel enableConfigPanel = new JPanel();
 		enableConfigPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		FlowLayout flowLayout = (FlowLayout) enableConfigPanel.getLayout();
 		flowLayout.setAlignment(FlowLayout.LEFT);
 		contentPane.add(enableConfigPanel, BorderLayout.NORTH);
-		
-		
+
+
 		JPanel panel_3 = new JPanel();
 		panel_3.setBorder(null);
 		enableConfigPanel.add(panel_3);
 		panel_3.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		
+
 		JLabel enableFor = new JLabel("Enable For :");
 		panel_3.add(enableFor);
-		
+
 		chckbxProxy = new JCheckBox("Proxy");
 		panel_3.add(chckbxProxy);
-		
+
 		chckbxScanner = new JCheckBox("Scanner");
 		panel_3.add(chckbxScanner);
-		
+
 		chckbxIntruder = new JCheckBox("Intruder");
 		panel_3.add(chckbxIntruder);
-		
+
 		chckbxRepeater = new JCheckBox("Repeater");
 		chckbxRepeater.setSelected(true);
 		panel_3.add(chckbxRepeater);
-		
+
 		JPanel panel_1 = new JPanel();
 		panel_1.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		contentPane.add(panel_1, BorderLayout.SOUTH);
 		panel_1.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-		
+
 		JLabel lblNewLabel = new JLabel(extenderName+"    https://github.com/bit4woo");
 		lblNewLabel.addMouseListener(new MouseAdapter() {
 			@Override
@@ -151,7 +151,7 @@ public class CGUI extends JFrame {
 				} catch (Exception e2) {
 					// TODO: handle exception
 				}
-				
+
 			}
 			@Override
 			public void mouseEntered(MouseEvent e) {
@@ -164,30 +164,30 @@ public class CGUI extends JFrame {
 		});
 		lblNewLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		panel_1.add(lblNewLabel);
-		
+
 		JPanel panel = new JPanel();
 		panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		contentPane.add(panel, BorderLayout.CENTER);
 		panel.setLayout(new BorderLayout(0, 0));
-		
+
 		JPanel panel_5 = new JPanel();
 		panel.add(panel_5, BorderLayout.NORTH);
 		panel_5.setLayout(new GridLayout(0, 1, 0, 0));
-		
+
 		JLabel lblURL = new JLabel("Domain:");
 		panel_5.add(lblURL);
-		
+
 		textFieldDomain = new JTextField();
 		panel_5.add(textFieldDomain);
 		textFieldDomain.setColumns(20);
-		
+
 		JLabel lblParas = new JLabel("[1] Parameters:(Click Table Header To Sort Or Move Up And Down To Custom)");
 		panel_5.add(lblParas);
-		
+
 		JScrollPane panel_6 = new JScrollPane();
 		panel_6.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		panel.add(panel_6, BorderLayout.CENTER);
-		
+
 		table = new JTable();
 		table.getTableHeader().addMouseListener(new MouseAdapter() {
 			@Override
@@ -201,8 +201,8 @@ public class CGUI extends JFrame {
 					sortedColumn = -1; //没有点击表头进行排序。
 					sortedMethod = null;
 				}
-//				System.out.println(sortedColumn);
-//				System.out.println(sortedMethod);
+				//				System.out.println(sortedColumn);
+				//				System.out.println(sortedMethod);
 				lblOrderMethod.setText(table.getColumnName(sortedColumn)+" "+sortedMethod);
 			}
 		});
@@ -212,19 +212,19 @@ public class CGUI extends JFrame {
 		table.setFillsViewportHeight(true);
 		table.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
 		DefaultTableModel tableModel = new DefaultTableModel(
-				new Object[][] {
+				new Object[][][] {
 					//{null, null},
 				},
 				new String[] {
-					"Key", "Value"
+						"Key", "Value","Type"
 				});
 		sorter = new TableRowSorter<TableModel>(tableModel);
 		table.setRowSorter(sorter);
 		panel_6.setViewportView(table);
 		table.setModel(tableModel);
-		
-		
-		
+
+
+
 		JPanel panel_7 = new JPanel();
 		panel.add(panel_7, BorderLayout.EAST);
 		GridBagLayout gbl_panel_7 = new GridBagLayout();
@@ -233,17 +233,17 @@ public class CGUI extends JFrame {
 		gbl_panel_7.columnWeights = new double[]{1.0, Double.MIN_VALUE};
 		gbl_panel_7.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel_7.setLayout(gbl_panel_7);
-		
+
 		JButton btnMarkAsSign = new JButton("Mark As Sign Para");
 		btnMarkAsSign.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (table.getSelectedRow() != -1){
-					signPara = table.getValueAt(table.getSelectedRow(), 0).toString();
+					String signPara = table.getValueAt(table.getSelectedRow(), 0).toString();
 					textFieldSign.setText(signPara);
 				}
 			}
 		});
-		
+
 		JButton btnMoveDown = new JButton("Move Down");
 		btnMoveDown.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -252,29 +252,33 @@ public class CGUI extends JFrame {
 						int row = table.getSelectedRow();
 						String xkey = table.getValueAt(row, 0).toString();
 						String xvalue = table.getValueAt(row, 1).toString();
+						String xtype = table.getValueAt(row, 2).toString();
 						
 						String tmpkey = table.getValueAt(row+1, 0).toString();
 						String tmpvalue = table.getValueAt(row+1, 1).toString();
-						
+						String tmptype = table.getValueAt(row+1, 2).toString();
+
 						//do exchange 
 						tableModel.setValueAt(tmpkey, row, 0);
 						tableModel.setValueAt(tmpvalue, row, 1);
-						
+						tableModel.setValueAt(tmptype, row, 2);
+
 						tableModel.setValueAt(xkey, row+1, 0);
 						tableModel.setValueAt(xvalue, row+1, 1);
-						
+						tableModel.setValueAt(xtype, row+1, 2);
+
 						table.setRowSelectionInterval(row+1, row+1);//set the line selected
 
 						lblOrderMethod.setText("Custom Order");
 					}catch(Exception e1){
-						
+
 					}
-					
-					
+
+
 				}
 			}
 		});
-		
+
 		JButton btnMoveUp = new JButton("Move Up");
 		btnMoveUp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -283,19 +287,22 @@ public class CGUI extends JFrame {
 						int row = table.getSelectedRow();
 						String xkey = table.getValueAt(row, 0).toString();
 						String xvalue = table.getValueAt(row, 1).toString();
-						
+						String xtype = table.getValueAt(row, 2).toString();
+
 						String tmpkey = table.getValueAt(row-1, 0).toString();
 						String tmpvalue = table.getValueAt(row-1, 1).toString();
-						
+						String tmptype = table.getValueAt(row-1, 2).toString();
 						//do exchange 
 						tableModel.setValueAt(tmpkey, row, 0);
 						tableModel.setValueAt(tmpvalue, row, 1);
-						
+						tableModel.setValueAt(tmptype, row, 2);
+
 						tableModel.setValueAt(xkey, row-1, 0);
 						tableModel.setValueAt(xvalue, row-1, 1);
-						
+						tableModel.setValueAt(xtype, row-1, 2);
+
 						table.setRowSelectionInterval(row-1, row-1);
-						
+
 						lblOrderMethod.setText("Custom Order");
 					} catch (Exception e2) {
 						// TODO: handle exception
@@ -304,7 +311,7 @@ public class CGUI extends JFrame {
 				}
 			}
 		});
-		
+
 		JButton btnAdd = new JButton("Add");
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -313,7 +320,7 @@ public class CGUI extends JFrame {
 				lblOrderMethod.setText("Custom Order");
 			}
 		});
-		
+
 		JButton btnNewButton = new JButton("Remove");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -322,7 +329,7 @@ public class CGUI extends JFrame {
 					rowindexs[i] = table.convertRowIndexToModel(rowindexs[i]);//转换为Model的索引，否则排序后索引不对应。
 				}
 				Arrays.sort(rowindexs);
-				
+
 				DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
 				for(int i=rowindexs.length-1;i>=0;i--){
 					tableModel.removeRow(rowindexs[i]);
@@ -330,7 +337,7 @@ public class CGUI extends JFrame {
 				lblOrderMethod.setText("Custom Order");
 			}
 		});
-		
+
 		lblOrderMethod = new JLabel("Custom Order");
 		GridBagConstraints gbc_lblOrderMethod = new GridBagConstraints();
 		gbc_lblOrderMethod.insets = new Insets(0, 0, 5, 0);
@@ -362,7 +369,7 @@ public class CGUI extends JFrame {
 		gbc_btnMarkAsSign.gridx = 0;
 		gbc_btnMarkAsSign.gridy = 6;
 		panel_7.add(btnMarkAsSign, gbc_btnMarkAsSign);
-		
+
 		textFieldSign = new JTextField();
 		GridBagConstraints gbc_textFieldSign = new GridBagConstraints();
 		gbc_textFieldSign.insets = new Insets(0, 0, 5, 0);
@@ -371,16 +378,16 @@ public class CGUI extends JFrame {
 		gbc_textFieldSign.gridy = 7;
 		panel_7.add(textFieldSign, gbc_textFieldSign);
 		textFieldSign.setColumns(10);
-		
+
 		JButton button = new JButton("Show Final String");
 		button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//System.out.println(getOnlyValueConfig());
 				//System.out.println(getSignPara());
-				if (getSignPara().equals("")){
+				if (textFieldSign.getText().equals("")){
 					textAreaFinalString.setText("error! sign parameter must be specified!");
 				}else{
-					String str = combineString(getParaFromTable(),getOnlyValueConfig(),getParaConnector());
+					String str = combineString(getParaMapFromTable(),getOnlyValueConfig(),getParaConnector());
 					if (str.contains("<timestamp>")){
 						str = str.replace("<timestamp>", Long.toString(System.currentTimeMillis()));//需要重新赋值，否则不会被更新
 					}
@@ -393,61 +400,61 @@ public class CGUI extends JFrame {
 		gbc_button.gridx = 0;
 		gbc_button.gridy = 9;
 		panel_7.add(button, gbc_button);
-		
-		
+
+
 		JPanel panel_8 = new JPanel();
 		panel_8.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		panel.add(panel_8, BorderLayout.SOUTH);
 		panel_8.setLayout(new GridLayout(0, 1, 0, 0));
-		
+
 		JLabel lblSecretKey = new JLabel("[2] Secret Key :");
 		panel_8.add(lblSecretKey);
-		
+
 		textFieldSecretKey = new JTextField();
 		panel_8.add(textFieldSecretKey);
 		textFieldSecretKey.setHorizontalAlignment(SwingConstants.LEFT);
 		textFieldSecretKey.setColumns(50);
-		
-		
+
+
 		chckbxSameAsPara = new JCheckBox("Add secret key as a parameter. eg. key=secretkey");
 		panel_8.add(chckbxSameAsPara);
 		chckbxSameAsPara.setSelected(true);
 		buttonGroup.add(chckbxSameAsPara);
-		
+
 		chckbxAppendToEnd = new JCheckBox("Append to the end of sorted Parameters. eg. &key=secretkey");
 		panel_8.add(chckbxAppendToEnd);
 		buttonGroup.add(chckbxAppendToEnd);
-		
+
 		JLabel lblNewLabel_1 = new JLabel("[3] How To Combine\uFF1A ");
 		panel_8.add(lblNewLabel_1);
-		
+
 		chckbxOnlyUseValue = new JCheckBox("Only Use Value");
 		panel_8.add(chckbxOnlyUseValue);
-		
+
 		JLabel lblConnecStringBetween = new JLabel("connection string between each parameter");
 		panel_8.add(lblConnecStringBetween);
-		
+
 		textFieldParaConnector = new JTextField();
 		textFieldParaConnector.setText("&");
 		panel_8.add(textFieldParaConnector);
 		textFieldParaConnector.setColumns(50);
-		
+
 		JPanel panel_2 = new JPanel();
 		panel_2.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		contentPane.add(panel_2, BorderLayout.EAST);
 		panel_2.setLayout(new BorderLayout(0, 0));
-		
+
 		textAreaFinalString = new JTextArea();
 		textAreaFinalString.setLineWrap(true);
 		textAreaFinalString.setColumns(20);
 		textAreaFinalString.setRows(20);
 		panel_2.add(textAreaFinalString, BorderLayout.WEST);
-		
+
 		textAreaSign = new JTextArea();
 		textAreaSign.setLineWrap(true);
 		textAreaSign.setColumns(20);
 		panel_2.add(textAreaSign, BorderLayout.EAST);
-		
+
 		JPanel panel_10 = new JPanel();
 		panel_2.add(panel_10, BorderLayout.NORTH);
 		GridBagLayout gbl_panel_10 = new GridBagLayout();
@@ -456,7 +463,7 @@ public class CGUI extends JFrame {
 		gbl_panel_10.columnWeights = new double[]{0.0, 0.0, 0.0, Double.MIN_VALUE};
 		gbl_panel_10.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		panel_10.setLayout(gbl_panel_10);
-		
+
 		JLabel lblNewLabel_2 = new JLabel("Chose Sign Method:");
 		GridBagConstraints gbc_lblNewLabel_2 = new GridBagConstraints();
 		gbc_lblNewLabel_2.anchor = GridBagConstraints.WEST;
@@ -464,7 +471,7 @@ public class CGUI extends JFrame {
 		gbc_lblNewLabel_2.gridx = 0;
 		gbc_lblNewLabel_2.gridy = 0;
 		panel_10.add(lblNewLabel_2, gbc_lblNewLabel_2);
-		
+
 		chckbxMD5 = new JCheckBox("MD5");
 		chckbxMD5.setSelected(true);
 		GridBagConstraints gbc_chckbxMD5 = new GridBagConstraints();
@@ -474,7 +481,7 @@ public class CGUI extends JFrame {
 		gbc_chckbxMD5.gridy = 1;
 		panel_10.add(chckbxMD5, gbc_chckbxMD5);
 		buttonGroup1.add(chckbxMD5);
-		
+
 		chckbxSHA1 = new JCheckBox("SHA1");
 		chckbxSHA1.setSelected(true);
 		GridBagConstraints gbc_chckbxSHA1 = new GridBagConstraints();
@@ -483,7 +490,7 @@ public class CGUI extends JFrame {
 		gbc_chckbxSHA1.gridy = 1;
 		panel_10.add(chckbxSHA1, gbc_chckbxSHA1);
 		buttonGroup1.add(chckbxSHA1);
-		
+
 		chckbxNewCheckBox_3 = new JCheckBox("To be Continue");
 		chckbxNewCheckBox_3.setSelected(true);
 		chckbxNewCheckBox_3.setEnabled(false);
@@ -493,10 +500,10 @@ public class CGUI extends JFrame {
 		gbc_chckbxNewCheckBox_3.gridx = 2;
 		gbc_chckbxNewCheckBox_3.gridy = 1;
 		panel_10.add(chckbxNewCheckBox_3, gbc_chckbxNewCheckBox_3);
-		
+
 		JPanel panel_11 = new JPanel();
 		panel_2.add(panel_11, BorderLayout.CENTER);
-		
+
 		JButton btnSign = new JButton("Sign");
 		btnSign.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -505,9 +512,9 @@ public class CGUI extends JFrame {
 		});
 		panel_11.add(btnSign);
 	}
-	
-	
-	
+
+
+
 	public int checkEnabledFor(){
 		//get values that should enable this extender for which Component.
 		int status = 0;
@@ -525,8 +532,8 @@ public class CGUI extends JFrame {
 		}
 		return status;
 	}
-	
-	
+
+
 	public void getSecKeyConfig() {
 		secretKey = textFieldSecretKey.getText();
 		if(chckbxAppendToEnd.isSelected()){
@@ -536,7 +543,7 @@ public class CGUI extends JFrame {
 			howDealKey = "sameAsPara";
 		}
 	}
-	
+
 	public boolean getOnlyValueConfig() {
 		if(chckbxOnlyUseValue.isSelected()){
 			return true;
@@ -544,13 +551,14 @@ public class CGUI extends JFrame {
 			return false;
 		}
 	}
-	
+
 	public String getParaConnector() {
 		return textFieldParaConnector.getText();
 	}
-	
 
-	
+
+
+
 	public String getSignAlgorithm() {
 		if (chckbxMD5.isSelected()){
 			return "MD5";
@@ -560,7 +568,7 @@ public class CGUI extends JFrame {
 			return "null";
 		}
 	}
-	
+
 	//两个核心方法：1是拼接字符串，2是计算出sign
 	public String calcSign(String str){
 		String sign = "Sign Error";
@@ -572,21 +580,21 @@ public class CGUI extends JFrame {
 		}
 		return sign;
 	}
-	
+
 	public String combineString(Map<String, String> paraMap, boolean onlyValue, String paraConnector) {
 		getSecKeyConfig();
-		
+
 		String finalString = "";
-		
-		
+
+
 		if (howDealKey.equals("sameAsPara")){
 			secretKey = textFieldSecretKey.getText();
 			if(secretKey.contains("=") & secretKey.split("=").length==2){
 				paraMap.put(secretKey.split("=")[0], secretKey.split("=")[1]);
 			}
 		}
-		
-		
+
+
 		if (sortedColumn == -1 || lblOrderMethod.equals("Custom Order")){//未进行排序。
 			for(Map.Entry<String,String>para:paraMap.entrySet()){
 				if (!finalString.equals("")){
@@ -612,33 +620,51 @@ public class CGUI extends JFrame {
 				finalString = custom.CMapSort.combineMapEntry(custom.CMapSort.sortMapByValue(paraMap,"DESCENDING"), onlyValue, paraConnector);
 			}
 		}
-		
-		
+
+
 		if (howDealKey.equals("appendToEnd")){
 			secretKey = textFieldSecretKey.getText();
 			finalString += secretKey;
 		}
 		return finalString;
 	}
-	
+
 	public String getHostFromUI(){
-    	String domain = "";
-    	domain = textFieldDomain.getText();
-    	return domain ;
+		String domain = "";
+		domain = textFieldDomain.getText();
+		return domain ;
+	}
+
+	public List<IParameter> getParaFromTable(){
+		List<IParameter> tableParas = new ArrayList<IParameter>();
+		for (int i=0; i<table.getRowCount();i++){
+			//System.out.println(table.getRowCount());
+			String key = table.getValueAt(i, 0).toString();
+			//System.out.println(key);
+			String value = table.getValueAt(i, 1).toString();
+			//System.out.println(value);
+			byte type = (byte) Integer.parseInt(table.getValueAt(i, 2).toString());
+			tableParas.add(new Parameter(key, value,type));
+		}
+		System.out.println(tableParas);
+		return tableParas;
+	}
+
+	public IParameter getParaThatUseTimeStamp(){
+		for (int i=0; i<table.getRowCount();i++){
+			//System.out.println(table.getRowCount());
+			String key = table.getValueAt(i, 0).toString();
+			//System.out.println(key);
+			String value = table.getValueAt(i, 1).toString();
+			byte type = (byte) Integer.parseInt(table.getValueAt(i, 2).toString());
+			if (value.contains("<timestamp>")) {
+				return new Parameter(key, value,type);
+			}
+		}
+		return null;
 	}
 	
-	public LinkedHashMap<String, String> getPara(IRequestInfo analyzeRequest){
-    	List<IParameter> paras = analyzeRequest.getParameters();
-    	LinkedHashMap<String,String> paraMap = getParaFromTable();//从表格中获取有序的Map，只要更新就好
-    	for (IParameter para:paras){
-    		if (paraMap.containsKey(para.getName())){
-    			paraMap.put(para.getName(), para.getValue());
-    		}
-    	}
-    	return paraMap ;
-	}
-	
-	public LinkedHashMap<String, String> getParaFromTable(){
+	public LinkedHashMap<String, String> getParaMapFromTable(){
 		LinkedHashMap<String, String> tableParas = new LinkedHashMap<String, String>();
     	for (int i=0; i<table.getRowCount();i++){
     		//System.out.println(table.getRowCount());
@@ -646,18 +672,12 @@ public class CGUI extends JFrame {
     		//System.out.println(key);
     		String value = table.getValueAt(i, 1).toString();
     		//System.out.println(value);
-    		if (!key.equals(getSignPara())){
+    		if (!key.equals(textFieldSign.getText())){
     			tableParas.put(key, value);
     		}
     	}
-    	System.out.println(tableParas);
     	return tableParas;
 	}
-	
-	public String getSignPara(){
-		return textFieldSign.getText();
-	}
-	
 
 
 }

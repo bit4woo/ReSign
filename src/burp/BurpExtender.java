@@ -22,7 +22,7 @@ import custom.CGUI;
 public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContextMenuFactory
 {
 	private IBurpExtenderCallbacks callbacks;
-	private IExtensionHelpers helpers;
+	public static IExtensionHelpers helpers;
 	private PrintWriter stdout;//现在这里定义变量，再在registerExtenderCallbacks函数中实例化，如果都在函数中就只是局部变量，不能在这实例化，因为要用到其他参数。
 	public String extenderName = "Resign v2.3 by bit4woo";
 
@@ -31,12 +31,11 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	public int sortedColumn;
 	public SortOrder sortedMethod;
 	public String howDealKey = ""; //sameAsPara  or appendToEnd
-	String signPara = null; //the key name of sign parameter
-	private String signParaType;
-	private CGUI GUI;
-	private IHttpRequestResponse currentMessage;
-	static final byte PARAM_Header = 7;
 
+	private CGUI GUI;
+	public static IHttpRequestResponse currentMessage;
+	public static List<IParameter> paras;
+	public static IParameter signPara;
 
 
 	// implement IBurpExtender
@@ -66,139 +65,98 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 				stdout.println("\r\n");
 				HelperPlus getter = new HelperPlus(helpers);
 				String host = getter.getHost(messageInfo);
-				IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo); //对消息体进行解析
-				signPara =GUI.getSignPara();
-				byte getSignParaType = getSignParaType(messageInfo);
+				getSignPara();
 
 				//*******************recalculate sign**************************//
-				if (host.equals(GUI.getHostFromUI()) && getSignParaType !=-1){//检查图形面板上的各种参数，都齐备了才进行。
-					byte[] new_Request = messageInfo.getRequest();
-					String str = GUI.combineString(getUpdatedParaBaseOnTable(analyzeRequest),GUI.getOnlyValueConfig(),GUI.getParaConnector());
-					//stdout.println("Combined String:"+str);
+				if (host.equals(GUI.getHostFromUI()) && signPara.getType() !=-1){//检查图形面板上的各种参数，都齐备了才进行。
+					String timeStamp = Long.toString(System.currentTimeMillis());
+					
+					String str = GUI.combineString(GUI.getParaMapFromTable(),GUI.getOnlyValueConfig(),GUI.getParaConnector());
+					str = str.replace("<timestamp>", timeStamp);
 					String newSign = GUI.calcSign(str);
-					//stdout.println("New Sign:"+newSign); //输出到extender的UI窗口，可以让使用者有一些判断
+					
 					//更新参数
-					//newSign = newSign.toUpperCase();
-
-					if(getSignParaType == IParameter.PARAM_JSON) {
-						int bodyOffset = analyzeRequest.getBodyOffset();
-						List<String> headers = analyzeRequest.getHeaders();
-
-						byte[] byte_Request = messageInfo.getRequest();//当需要byte[]和string格式的请求包时用这个方法！
-						String request = new String(byte_Request); //byte[] to String
-
-						String body = request.substring(bodyOffset);
-						String oldchar = getSignParaValue(analyzeRequest);
-						callbacks.printOutput(oldchar);
-						String newBody = body.replace(getSignParaValue(analyzeRequest), newSign);
-
-						byte[] bodyByte = newBody.getBytes();
-						new_Request = helpers.buildHttpMessage(headers, bodyByte); //关键方法
-						messageInfo.setRequest(new_Request);//设置最终新的请求包
-					}else if(getSignParaType == PARAM_Header) {
-						List<String> headers = getter.getHeaderList(true,messageInfo);
-						byte[] body = getter.getBody(true, messageInfo);
-
-						for (String header:headers) {
-							if (header.startsWith(signPara+":")) {
-								headers.remove(header);
-								headers.add(signPara+": "+newSign);
-								break;
-							}
-						}
-
-						new_Request = helpers.buildHttpMessage(headers, body); //关键方法
-						messageInfo.setRequest(new_Request);//设置最终新的请求包
-					}else {
-						IParameter newPara = helpers.buildParameter(signPara, newSign, getSignParaType); //构造新的参数,如果参数是PARAM_JSON类型，这个方法是不适用的
-						new_Request = helpers.updateParameter(new_Request, newPara); //构造新的请求包，这里是方法一updateParameter
-						messageInfo.setRequest(new_Request);//设置最终新的请求包
-					}
+					IParameter newSignPara = new Parameter(signPara.getName(),newSign,signPara.getType());
+					updateMessage(true,messageInfo,newSignPara);
+					
+					IParameter timePara = GUI.getParaThatUseTimeStamp();
+					
+					IParameter newTimePara = new Parameter(timePara.getName(),timeStamp,timePara.getType());
+					updateMessage(true,messageInfo,newTimePara);
 
 					stdout.println("Changed Request:");
 					stdout.println(new String(messageInfo.getRequest()));
 					stdout.print("\r\n");
-					//to verify the updated result
-					//	    			for (IParameter para : helpers.analyzeRequest(messageInfo).getParameters()){
-					//	    				stdout.println(para.getValue());
-					//	    			}
-
 				}
 			}
 		}  		
 	}
+	
+	/**
+	 * 更新数据包。要替换的数据包可能时header头--自行实现的
+	 * 
+	 */
+	public void updateMessage(boolean messageIsRequest,IHttpRequestResponse messageInfo,IParameter para) {
+		HelperPlus getter = new HelperPlus(helpers);
+		
+		if(para.getType() == IParameter.PARAM_JSON) {
+			List<String> headers = getter.getHeaderList(messageIsRequest,messageInfo);
 
-	//根据GUI中的有序参数列表，更新当前请求的参数列表。
-	public Map<String, String> getUpdatedParaBaseOnTable(IRequestInfo analyzeRequest){
-		List<IParameter> paras = analyzeRequest.getParameters();//当body是json格式的时候，这个方法也可以正常获取到键值对，牛掰。但是PARAM_JSON等格式不能通过updateParameter方法来更新。
-		Map<String,String> paraMap = GUI.getParaFromTable();
-		for (IParameter para:paras){
-			if (paraMap.keySet().contains(para.getName())){
-				if (paraMap.get(para.getName()).contains("<timestamp>")){
-					paraMap.put(para.getName(), paraMap.get(para.getName()).replace("<timestamp>", Long.toString(System.currentTimeMillis())));
-				}else {
-					paraMap.put(para.getName(), para.getValue());
-					//stdout.println(para.getName()+":"+para.getValue());
+			byte[] body = HelperPlus.getBody(messageIsRequest, messageInfo);
+			
+			String oldchar = getter.getParameterByKey(messageInfo, para.getName()).getValue();
+			String newBody = new String(body).replace(oldchar, para.getValue());
+
+			byte[] bodyByte = newBody.getBytes();
+			byte[] new_Request = helpers.buildHttpMessage(headers, bodyByte); //关键方法
+			messageInfo.setRequest(new_Request);//设置最终新的请求包
+		}else if(para.getType() == Parameter.PARAM_Header) {
+			List<String> headers = getter.getHeaderList(true,messageInfo);
+			byte[] body = HelperPlus.getBody(true, messageInfo);
+
+			for (String header:headers) {
+				if (header.startsWith(para.getName()+":")) {
+					headers.remove(header);
+					headers.add(para.getName()+": "+para.getValue());
+					break;
 				}
 			}
+
+			byte[] new_Request = helpers.buildHttpMessage(headers, body); //关键方法
+			messageInfo.setRequest(new_Request);//设置最终新的请求包
+		}else {
+			byte[] new_Request = helpers.updateParameter(messageInfo.getRequest(), para); //构造新的请求包，这里是方法一updateParameter
+			messageInfo.setRequest(new_Request);//设置最终新的请求包
 		}
-		return paraMap ;
+	}
+	
+	public void getSignPara(){
+		String signParaName = GUI.textFieldSign.getText();
+		List<IParameter> paras = getParasAndHeaders(currentMessage);
+		for(IParameter para:paras){
+			if (para.getName().equals(signParaName)) {
+				signPara = para;
+			}
+		}
 	}
 
-	public Map<String, String> getPara(IRequestInfo analyzeRequest){
-		List<IParameter> paras = analyzeRequest.getParameters();//当body是json格式的时候，这个方法也可以正常获取到键值对，牛掰。但是PARAM_JSON等格式不能通过updateParameter方法来更新。
-		Map<String,String> paraMap = new HashMap<String,String>();
-		for (IParameter para:paras){
-			paraMap.put(para.getName(), para.getValue());
-		}
-		return paraMap ;
-	}
 
-	public Map<String, String> getParaAndHeader(IHttpRequestResponse messageInfo){
+	/**
+	 * 返回各种可能用于签名的参数、包含header。
+	 * @param messageInfo
+	 * @return
+	 */
+	public List<IParameter> getParasAndHeaders(IHttpRequestResponse messageInfo){
 
-		Getter getter = new Getter(helpers);
+		Getter getter = new Getter(BurpExtender.helpers);
 
 		List<IParameter> paras = getter.getParas(messageInfo);
-		HashMap<String,String> paraMap = new HashMap<String,String>();
-		for (IParameter para:paras){
-			paraMap.put(para.getName(), para.getValue());
-		}
 		LinkedHashMap<String, String> headers = getter.getHeaderMap(true,messageInfo);
-		paraMap.putAll(headers);
-		return paraMap ;
-	}
-
-	public byte getSignParaType(IHttpRequestResponse messageInfo){
-		Getter getter = new Getter(helpers);
-
-		List<IParameter> paras = getter.getParas(messageInfo);
-		byte signParaType = -1;
-		for (IParameter para:paras){
-			if (para.getName().equals(signPara)){
-				signParaType = para.getType();
-				return signParaType;
-			}
+		for (String key:headers.keySet()) {
+			Parameter para = new Parameter(key,headers.get(key),Parameter.PARAM_Header);
+			paras.add(para);
 		}
-
-		LinkedHashMap<String, String> headers = getter.getHeaderMap(true,messageInfo);
-		for (String header:headers.keySet()){
-			if (header.equals(signPara)){
-				return PARAM_Header;
-			}
-		}
-		return signParaType;
-	}
-
-	public String getSignParaValue(IRequestInfo analyzeRequest){
-		List<IParameter> paras = analyzeRequest.getParameters();//当body是json格式的时候，这个方法也可以正常获取到键值对，牛掰。但是PARAM_JSON等格式不能通过updateParameter方法来更新。
-		String signParaType = null;
-		for (IParameter para:paras){
-			if (para.getName().equals(signPara)){
-				signParaType = para.getValue();
-
-			}
-		}
-		return signParaType;
+		return paras;
 	}
 
 
@@ -230,7 +188,6 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	//ITab必须实现的两个方法
 
 
-
 	//IContextMenuFactory 必须实现的方法
 	@Override
 	public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation)
@@ -254,9 +211,9 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 						DefaultTableModel tableModel = (DefaultTableModel) GUI.table.getModel();
 						tableModel.setRowCount(0);//为了清空之前的数据
 
-						Map<String,String> paraMap = getParaAndHeader(currentMessage);
-						for(String key:paraMap.keySet()){
-							tableModel.addRow(new Object[]{URLDecoder.decode(key),URLDecoder.decode(paraMap.get(key))});
+						List<IParameter> paras = getParasAndHeaders(currentMessage);
+						for(IParameter para:paras){
+							tableModel.addRow(new Object[]{URLDecoder.decode(para.getName()),URLDecoder.decode(para.getValue()),para.getType()});
 						}
 					}
 					catch (Exception e1)

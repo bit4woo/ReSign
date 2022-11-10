@@ -53,3 +53,6 @@ bin/
 .classpath
 .project
 /.settings/
+/.idea/
+
+ReSign.iml
