@@ -11,14 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.SortOrder;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
@@ -73,7 +66,8 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 				stdout.println("\r\n");
 				HelperPlus getter = new HelperPlus(helpers);
 				String host = getter.getHost(messageInfo);
-				IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo); //对消息体进行解析 
+				IRequestInfo analyzeRequest = helpers.analyzeRequest(messageInfo); //对消息体进行解析
+				signPara =GUI.getSignPara();
 				byte getSignParaType = getSignParaType(messageInfo);
 
 				//*******************recalculate sign**************************//
@@ -106,9 +100,9 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 						byte[] body = getter.getBody(true, messageInfo);
 
 						for (String header:headers) {
-							if (header.startsWith(GUI.getSignPara()+":")) {
+							if (header.startsWith(signPara+":")) {
 								headers.remove(header);
-								headers.add(GUI.getSignPara()+": "+newSign);
+								headers.add(signPara+": "+newSign);
 								break;
 							}
 						}

@@ -381,6 +381,9 @@ public class CGUI extends JFrame {
 					textAreaFinalString.setText("error! sign parameter must be specified!");
 				}else{
 					String str = combineString(getParaFromTable(),getOnlyValueConfig(),getParaConnector());
+					if (str.contains("<timestamp>")){
+						str = str.replace("<timestamp>", Long.toString(System.currentTimeMillis()));//需要重新赋值，否则不会被更新
+					}
 					textAreaFinalString.setText(str);
 				}
 			}
@@ -406,12 +409,12 @@ public class CGUI extends JFrame {
 		textFieldSecretKey.setColumns(50);
 		
 		
-		chckbxSameAsPara = new JCheckBox("Add secret key as a parameter, to sort with parameters");
+		chckbxSameAsPara = new JCheckBox("Add secret key as a parameter. eg. key=secretkey");
 		panel_8.add(chckbxSameAsPara);
 		chckbxSameAsPara.setSelected(true);
 		buttonGroup.add(chckbxSameAsPara);
 		
-		chckbxAppendToEnd = new JCheckBox("Append to the end of sorted Parameters(should contains connection string, such as & :)");
+		chckbxAppendToEnd = new JCheckBox("Append to the end of sorted Parameters. eg. &key=secretkey");
 		panel_8.add(chckbxAppendToEnd);
 		buttonGroup.add(chckbxAppendToEnd);
 		
