@@ -24,7 +24,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	private IBurpExtenderCallbacks callbacks;
 	private IExtensionHelpers helpers;
 	private PrintWriter stdout;//现在这里定义变量，再在registerExtenderCallbacks函数中实例化，如果都在函数中就只是局部变量，不能在这实例化，因为要用到其他参数。
-	public String extenderName = "Resign v2.3 by bit4";
+	public String extenderName = "Resign v2.3 by bit4woo";
 
 
 	public String secretKey = null;
