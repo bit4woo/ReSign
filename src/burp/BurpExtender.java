@@ -733,13 +733,26 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
     	return paraMap ;
 	}
 	
+	public Map<String, String> getParaAndHeader(IHttpRequestResponse messageInfo){
+    
+    	Getter getter = new Getter(helpers);
+    	
+    	List<IParameter> paras = getter.getParas(messageInfo);
+    	HashMap<String,String> paraMap = new HashMap<String,String>();
+    	for (IParameter para:paras){
+    		paraMap.put(para.getName(), para.getValue());
+    	}
+    	LinkedHashMap<String, String> headers = getter.getHeaderMap(true,messageInfo);
+    	paraMap.putAll(headers);
+    	return paraMap ;
+	}
+	
 	public byte getSignParaType(IRequestInfo analyzeRequest){
 		List<IParameter> paras = analyzeRequest.getParameters();//当body是json格式的时候，这个方法也可以正常获取到键值对，牛掰。但是PARAM_JSON等格式不能通过updateParameter方法来更新。
 		byte signParaType = -1;
 		for (IParameter para:paras){
     		if (para.getName().equals(signPara)){
     			signParaType = para.getType();
-    			
     		}
     	}
 		return signParaType;
@@ -852,7 +865,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener, ITab, IContex
 	            	DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
 	            	tableModel.setRowCount(0);//为了清空之前的数据
 	            	
-	            	Map<String,String> paraMap = getPara(analyzeRequest);
+	            	Map<String,String> paraMap = getParaAndHeader(messages[0]);
 	            	//stdout.println(paraMap);
 	            	//stdout.print(paraMap.keySet());
 	            	for(String key:paraMap.keySet()){
