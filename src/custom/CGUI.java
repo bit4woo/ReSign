@@ -1,65 +1,46 @@
 package custom;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.EventQueue;
-
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.JLabel;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
-
-import javax.swing.SwingConstants;
-import javax.swing.JTextField;
-import javax.swing.RowSorter;
-import javax.swing.SortOrder;
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
-import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
-import javax.xml.parsers.FactoryConfigurationError;
-
-import burp.IParameter;
-import burp.IRequestInfo;
-import custom.CMapSort;
-import custom.CSHA1;
-
 import java.awt.GridLayout;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.security.Signature;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.awt.event.ActionEvent;
-import java.awt.Dimension;
-import javax.swing.JSplitPane;
-import java.awt.Cursor;
-import java.awt.Desktop;
-
-import javax.swing.BoxLayout;
-import javax.swing.border.LineBorder;
-import java.awt.Color;
-import java.awt.Component;
 
 import javax.swing.ButtonGroup;
-import javax.swing.ButtonModel;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
+import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
+import burp.IParameter;
+import burp.IRequestInfo;
 
 public class CGUI extends JFrame {
 	public JCheckBox chckbxProxy;
@@ -76,7 +57,7 @@ public class CGUI extends JFrame {
 	public JCheckBox chckbxMD5;
 	public JCheckBox chckbxNewCheckBox_3;
 	public JTextArea textAreaSign;
-	private JLabel lblconnector;
+	public JLabel lblconnector;
 	public String extenderName = "Resign v2.0 by bit4";
 
 	
@@ -86,9 +67,9 @@ public class CGUI extends JFrame {
 	public SortOrder sortedMethod;
 	private final ButtonGroup buttonGroup = new ButtonGroup();
 	private final ButtonGroup buttonGroup1 = new ButtonGroup();
-	String howDealKey = ""; //sameAsPara  or appendToEnd
+	public String howDealKey = ""; //sameAsPara  or appendToEnd
 	private JTextField textFieldParaConnector;
-	String signPara; //the key name of sign parameter
+	public String signPara; //the key name of sign parameter
 	private JTextField textFieldSign;
 	private JCheckBox chckbxOnlyUseValue;
 	private JLabel lblOrderMethod;
@@ -516,15 +497,7 @@ public class CGUI extends JFrame {
 		JButton btnSign = new JButton("Sign");
 		btnSign.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String sign = "Sign Error";
-				//System.out.print(getSignAlgorithm());
-				if (getSignAlgorithm().equals("MD5")){
-					CMD5 getMD5 = new CMD5();
-					sign = getMD5.GetMD5Code(textAreaFinalString.getText());
-				}else if (getSignAlgorithm().equals("SHA1")) {
-					sign = CSHA1.SHA1(textAreaFinalString.getText());
-				}
-				textAreaSign.setText(sign);
+				textAreaSign.setText(calcSign(textAreaFinalString.getText()));
 			}
 		});
 		panel_11.add(btnSign);
@@ -568,6 +541,7 @@ public class CGUI extends JFrame {
 			return false;
 		}
 	}
+	
 	public String getParaConnector() {
 		return textFieldParaConnector.getText();
 	}
@@ -582,6 +556,18 @@ public class CGUI extends JFrame {
 		}else {
 			return "null";
 		}
+	}
+	
+	//两个核心方法：1是拼接字符串，2是计算出sign
+	public String calcSign(String str){
+		String sign = "Sign Error";
+		//System.out.print(getSignAlgorithm());
+		if (getSignAlgorithm().equals("MD5")){
+			sign = CMD5.GetMD5Code(str);
+		}else if (getSignAlgorithm().equals("SHA1")) {
+			sign = CSHA1.SHA1(str);
+		}
+		return sign;
 	}
 	
 	public String combineString(Map<String, String> paraMap, boolean onlyValue, String paraConnector) {
@@ -632,6 +618,11 @@ public class CGUI extends JFrame {
 		return finalString;
 	}
 	
+	public String getHostFromUI(){
+    	String domain = "";
+    	domain = textFieldDomain.getText();
+    	return domain ;
+	}
 	
 	public LinkedHashMap<String, String> getPara(IRequestInfo analyzeRequest){
     	List<IParameter> paras = analyzeRequest.getParameters();
@@ -659,8 +650,11 @@ public class CGUI extends JFrame {
     	System.out.println(tableParas);
     	return tableParas;
 	}
+	
 	public String getSignPara(){
 		return textFieldSign.getText();
 	}
+	
+
 
 }
