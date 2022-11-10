@@ -4,7 +4,7 @@ import java.util.Map.Entry;
 
 public class CMapSort {
 	/**
-	 * 使用 Map按key进行排序
+	 * 浣跨敤 Map鎸塳ey杩涜鎺掑簭
 	 * @param map
 	 * @return
 	 */
@@ -26,7 +26,7 @@ public class CMapSort {
 	}
 	
 	/**
-	 * 使用 Map按value进行排序
+	 * 浣跨敤 Map鎸塿alue杩涜鎺掑簭
 	 * @param map
 	 * @return
 	 */
@@ -76,25 +76,25 @@ public class CMapSort {
 		map.put("BWNBA", "3wnba");
 		map.put("CNBA", "2nba");
 		map.put("DCBA", "1cba");
-		Map<String, String> resultMap = sortMapByKey(map,"ASCENDING");	//按Key进行升序排序
-		System.out.println("key 升序");
+		Map<String, String> resultMap = sortMapByKey(map,"ASCENDING");	//鎸塊ey杩涜鍗囧簭鎺掑簭
+		System.out.println("key 鍗囧簭");
 		for (Map.Entry<String, String> entry : resultMap.entrySet()) {
 			System.out.println(entry.getKey() + " " + entry.getValue());
 		}
-		System.out.println("key 降序");
-		Map<String, String> resultMap1 = sortMapByKey(map,"DESCENDING");	//按Key进行降序排序
+		System.out.println("key 闄嶅簭");
+		Map<String, String> resultMap1 = sortMapByKey(map,"DESCENDING");	//鎸塊ey杩涜闄嶅簭鎺掑簭
 		for (Map.Entry<String, String> entry : resultMap1.entrySet()) {
 			System.out.println(entry.getKey() + " " + entry.getValue());
 		}
-		System.out.println("value 升序");
-		Map<String, String> resultMap2 = sortMapByValue(map, "ASCENDING");	//按Value进行排序
+		System.out.println("value 鍗囧簭");
+		Map<String, String> resultMap2 = sortMapByValue(map, "ASCENDING");	//鎸塚alue杩涜鎺掑簭
 		for (Map.Entry<String, String> entry : resultMap2.entrySet()) {
 			//System.out.println(entry.getKey() + " " + entry.getValue());
 			System.out.println(entry);
 		}
 		
-		System.out.println("vale 降序");
-		Map<String, String> resultMap3 = sortMapByValue(map, "DESCENDING");	//按Value进行排序
+		System.out.println("vale 闄嶅簭");
+		Map<String, String> resultMap3 = sortMapByValue(map, "DESCENDING");	//鎸塚alue杩涜鎺掑簭
 		for (Map.Entry<String, String> entry : resultMap3.entrySet()) {
 			//System.out.println(entry.getKey() + " " + entry.getValue());
 			System.out.println(entry);
@@ -103,7 +103,7 @@ public class CMapSort {
 	}
 }
 
-	//比较器类
+	//姣旇緝鍣ㄧ被
 	class MapKeyComparator implements Comparator<String>{
 		public int compare(String str1, String str2) {
 			return str1.compareTo(str2);
@@ -113,10 +113,10 @@ public class CMapSort {
 	
 	class MapKeyComparatorDesc implements Comparator<String>{
 		public int compare(String str1, String str2) {
-			return -(str1.compareTo(str2)); //通过控制返回来逆序
+			return -(str1.compareTo(str2)); //閫氳繃鎺у埗杩斿洖鏉ラ�嗗簭
 		}
 	}
-	//比较器类
+	//姣旇緝鍣ㄧ被
 	class MapValueComparator implements Comparator<Map.Entry<String, String>> {
 		public int compare(Entry<String, String> me1, Entry<String, String> me2) {
 			return me1.getValue().compareTo(me2.getValue());
@@ -128,4 +128,3 @@ public class CMapSort {
 			return -(me1.getValue().compareTo(me2.getValue()));
 		}
 	}
-

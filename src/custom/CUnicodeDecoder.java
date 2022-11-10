@@ -1,12 +1,12 @@
 package custom;
 
 /**
- * ¹¤¾ßÀà
+ * å·¥å…·ç±»
  */
 public class CUnicodeDecoder {
 
 	/**
-	 * unicode½âÂë£¨unicode±àÂë×ªÖĞÎÄ£©
+	 * unicodeè§£ç ï¼ˆunicodeç¼–ç è½¬ä¸­æ–‡ï¼‰
 	 * 
 	 * @param theString
 	 * @return
